@@ -1,6 +1,6 @@
 # Multi-modal deep neural decoding of visual object representation in humans
 
-
+Getting started
 
 
 ## 1. Docker image build
@@ -14,30 +14,31 @@ $ ./scripts/build.sh
 
 ## 2. Preprocessing
 
-実験データが追加された場合や、前処理方法が変更された場合は以下の手順で前処理を行う必要がある.
+It must be performed the following steps for preprocessing when new experimental data are added or the preprocessing method is changed.
 
 
 
-### 2.1 実験データ管理Excelファイルの更新
+### 2.1 Update the Excel file controling experimental data 
 
-`dld/experiment_data/experiments.xlsx` を更新して保存.
+Update and save as `dld/experiment_data/experiments.xlsx`
 
-`dld/experiment_data/experiments.csv` としてcsv形式でも保存しておく.
+Save also in .csv format as `dld/experiment_data/experiments.csv`
 
 
-Excelファイルの形式は
+In these Excel files, the experimental data must be formatted as follows. (Enter 0 for 'valid', if the data is not available.)
 
 | valid| date | subject | run| reject_epoch|
 | ------------- | ------------- | ------------- | ------------- | ------------- |
 |1	|191008	|1	|1	|17,22,30,...|
 
-この形式で、利用する実験データを記述していく.　(使えないデータの場合は`valid`を0にしておく)
 
 
 
-### 2.2 Docker container起動
+### 2.2 Running Docker container
 
-Dockerコンテナを起動して中に入り、プロジェクトのディレクトリへ移動する.
+Run and enter Docker container.
+
+Navigate to the project directory.
 
 ```
 $ ./scripts/run.sh
@@ -46,9 +47,9 @@ $ ./scripts/run.sh
 
 
 
-### 2.3 データのPreprocess
+### 2.3 Data preprocessing
 
-Matlabのデータおよびcsvファイルのnumpy形式への変換.
+Convert Matlab and csv data to numpy format.
 
 ```shell
 $ ./scripts/preprocess_alpha.sh
@@ -57,29 +58,29 @@ $ ./scripts/preprocess_alpha.sh
 
 
 
-| Option | 内容 | 選択肢 |デフォルト選択肢|
+| Option | Description | Choices | Default |
 | ------------- | ------------- | ------------- | ------------- |
-| fmri | fMRIのデータをpreprocessするかどうか  | "true" "false"| "true" |
-| eeg | EEGのデータをpreprocessするかどうか  | "true" "false"| "true" |
-| eeg_frame_type | EEGのフレームタイプ  | "normal", "filter", "ft"| "filter" |
-| smooth | smoothingされたfMRIのデータをコンバート対象とするかどうか | "true" "false"| "true" |
-| behavior  | .csvから読まれたbehaviorデータを書き出すかどうか  |"true" "false"| "true" |
-| eeg_normalize_type | EEGのノーマライズタイプ | "normal", "pre", "none" | "normal" |
-| src_base | 元データの場所 |  | "/data1/DLD/Data_Prepared" |
-| dst_base | 書き出しの場所 |  | "./data" |
-| fmri_frame_type | fMRIのフレームタイプ | "normal", "average", "three" | "normal" |
+| fmri | whether to preprocess the fmri data  | "true" "false"| "true" |
+| eeg | whether to preprocess the eeg data  | "true" "false"| "true" |
+| eeg_frame_type | frame type of the eeg data  | "normal", "filter", "ft"| "filter" |
+| smooth | whether to smooth the fmri data | "true" "false"| "true" |
+| behavior  | whether to export a behavior data read from the csv data |"true" "false"| "true" |
+| eeg_normalize_type | normalize type of the eeg data | "normal", "pre", "none" | "normal" |
+| src_base | location of raw data files |  | "/data1/DLD/Data_Prepared" |
+| dst_base | location of export files |  | "./data" |
+| fmri_frame_type | frame type of the fmri data | "normal", "average", "three" | "normal" |
 
-`--behavior` オプションの有無にかかわらず、preprocess時には behaviorは毎回 `experiments_data/experiemnts.csv`からロードされる. `--behavior` オプションはロードしたbehavior情報をファイルに保存するかどうかのみを指定している. 
+`--behavior` Regardless of this option, the behavior data is loaded from `experiments_data/experiemnts.csv` every time when the data preprocessing. `--behavior` option only specifies whether to save the loaded behavior data. 
 
  `--eeg`, `--fmri` オプションは実際にfmri, eegオプションの前処理のコンバートを行う.
 
 
 
- `--smooth` オプションと `--fmri_frame_type` はその指定の組み合わせにより、また `--eeg_normalize_type` オプションと `--eeg_frame_type` オプションはその組み合わせ指定により `--dst_base` ディレクトリの決められたサブディレクトリに指定した書き出される. 例えば`/data2/Data_Converted_nosmoosth` といった様なsmoothing, non-smoothing別にディレクトリを分ける必要はなく、/data2/Data_Converted` 以下にsmoothing, non-smoothingの両方のデータのコンバート結果をおき、学習時のsmoothオプションでどちらを読むかどうかを切り替えることができるようになっている. smooth有無, fmri_frame_type3種類全ての組み合わせを学習時に利用したい場合は、それら6種類全てのくみわせの前処理を行っておく必要があり、 eeg_normalize_typeとeeg_frame_typeの組み合わせに関しても同様である.
+The export files are written out to a determined subdirectory of `--dst_base`, depending on the combination specified in `--smooth` and `--fmri_frame_type` options, and `--eeg_normalize_type` and `--eeg_frame_type` options. For example, there iis no need to separate directories for smoothing and non-smoothing; e.g., `/data2/Data_Converted_nosmoosth`. By putting the results of conversion of both smoothing and non-smoothing data are placed it is possible to switch which one is loaded by the optional arguments at Training. If all combinations of '--fmri_frame_type' and '--smooth' will be used for Training, it must be preprocessed for such all six combinations. The same applies to the combination of '--eeg_frame_type' and '--eeg_normalize_type'.
 
 
 
-### 2.4 Trial平均のPreprocess
+### 2.4 Trial-averaged data preprocessing
 
 Trial平均のpreprocessは通常のpreprocessを行った後に、同じオプションを使った上で、`--average_trial_size`, `--average_repeat_size` を追加して前処理を行う.
 
