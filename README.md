@@ -76,7 +76,7 @@ $ ./scripts/preprocess_alpha.sh
 
 
 
-The export files are written out to a determined subdirectory of `--dst_base`, depending on the combination specified in `--smooth` and `--fmri_frame_type` options, and `--eeg_normalize_type` and `--eeg_frame_type` options. For example, there iis no need to separate directories for smoothing and non-smoothing; e.g., `/data2/Data_Converted_nosmoosth`. By putting the results of conversion of both smoothing and non-smoothing data are placed it is possible to switch which one is loaded by the optional arguments at Training. If all combinations of '--fmri_frame_type' and '--smooth' will be used for Training, it must be preprocessed for such all six combinations. The same applies to the combination of '--eeg_frame_type' and '--eeg_normalize_type'.
+The export files are written out to a determined subdirectory of `--dst_base`, depending on the combination specified in `--smooth` and `--fmri_frame_type` options, and `--eeg_normalize_type` and `--eeg_frame_type` options. For example, there iis no need to separate directories for smoothing and non-smoothing; e.g., `/data2/Data_Converted_nosmoosth`. By placing the results of conversion of both smoothing and non-smoothing data, it is possible to switch which one is loaded by the optional arguments at Training. If all combinations of '--fmri_frame_type' and '--smooth' will be used for Training, it must be preprocessed for such all six combinations. The same applies to the combination of '--eeg_frame_type' and '--eeg_normalize_type'.
 
 
 
