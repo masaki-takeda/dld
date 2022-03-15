@@ -63,7 +63,7 @@ $ ./scripts/preprocess_alpha.sh
 | fmri | whether to preprocess the fmri data  | "true" "false"| "true" |
 | eeg | whether to preprocess the eeg data  | "true" "false"| "true" |
 | eeg_frame_type | frame type of the eeg data  | "normal", "filter", "ft"| "filter" |
-| smooth | whether to smooth the fmri data | "true" "false"| "true" |
+| smooth | convert smoothed fmri data or non-smoothed data | "true" "false"| "true" |
 | behavior  | whether to export a behavior data read from the csv data |"true" "false"| "true" |
 | eeg_normalize_type | normalize type of the eeg data | "normal", "pre", "none" | "normal" |
 | src_base | location of raw data files |  | "/data1/DLD/Data_Prepared" |
@@ -84,27 +84,27 @@ The export files are written out to a determined subdirectory of `--dst_base`, d
 
 Trial-averaged data preprocessing must be done after the normal data preprocessing. For the trial-averaged data preprocessing, `--average_trial_size` and `--average_repeat_size` should be added to the same options as for the normal data preprocessing.
 
-  (The Executable file should have all the same options as ### except for the following. The file does not require the options of`--src_base` and `--behvavior` unlike `preprocess_average.py`)
+  (The Executable file should have all the same options as ### except for the following. It does not require the options of `--src_base` and `--behavior` unlike `preprocess_average.py`)
+
+The same options of `--average_trial_size` and `--average_repeat_size` are used for later Training.
 
 
-後の学習時にも同じ `--average_trial_size`, `--average_repeat_size` オプションを利用する.
 
-
-| Option | 内容 | 選択肢 |デフォルト選択肢|
+| Option | Description | Choices | Default |
 | ------------- | ------------- | ------------- | ------------- |
-| fmri | fMRIのデータをpreprocessするかどうか  | "true" "false"| "true" |
-| eeg | EEGのデータをpreprocessするかどうか  | "true" "false"| "true" |
-| eeg_frame_type | EEGのフレームタイプ  | "normal", "filter", "ft"| "filter" |
-| smooth | smoothingされたfMRIのデータをコンバート対象とするかどうか | "true" "false"| "true" |
-| eeg_normalize_type | EEGのノーマライズタイプ | "normal", "pre", "none" | "normal" |
-| dst_base | 読み込みと書き出しの場所 |  | "./data" |
-| fmri_frame_type | fMRIのフレームタイプ | "normal", "average", "three" | "normal" |
-| average_trial_size | 平均Trial数 |  | 0 |
-| average_repeat_size | データ水増しの繰り返し数 |  | 0 |
+| fmri | whether to preprocess the fmri data  | "true" "false"| "true" |
+| eeg | whether to preprocess the eeg data  | "true" "false"| "true" |
+| eeg_frame_type | frame type of the eeg data  | "normal", "filter", "ft"| "filter" |
+| smooth | convert smoothed fmri data or non-smoothed data | "true" "false"| "true" |
+| eeg_normalize_type | normalize type of the eeg data | "normal", "pre", "none" | "normal" |
+| dst_base | location of raw data and export files |  | "./data" |
+| fmri_frame_type | frame type of the fmri data | "normal", "average", "three" | "normal" |
+| average_trial_size | average number of trials |  | 0 |
+| average_repeat_size | number of repetitions for padding |  | 0 |
 
 
 
-実行例
+Example
 
 ```shell
 python3 preprocess_average.py --dst_base=/data2/DLD/Data_Converted --eeg_frame_type=filter --average_trial_size=3 --average_repeat_size=4
@@ -112,9 +112,9 @@ python3 preprocess_average.py --dst_base=/data2/DLD/Data_Converted --eeg_frame_t
 
 
 
-## 3. 学習
+## 3. Training
 
-### 3.1 Docker container起動
+### 3.1 Running Docker container
 
 ```
 $ ./scripts/run.sh
@@ -123,21 +123,21 @@ $ ./scripts/run.sh
 
 
 
-### 3.2 EEGデータの学習
+### 3.2 Training EEG data
 
-実行例
+Example
 
 ```shell
 python3 main_eeg.py --save_dir=./saved_eeg0 --data_dir=/data2/DLD/Data_Converted --model_type=tcn1 --test_subjects=TM_191008_01,TM_191009_01 --gpu=1
 ```
 
-オプションに関しては下で後述
+See below for options. (4.1.###)
 
 
 
-### 3.3 fMRIデータの学習
+### 3.3 Training fMRI data
 
-実行例
+Example
 
 ```shell
 python3 main_fmri.py --save_dir=./saved_fmri0 --data_dir=/data2/DLD/Data_Converted --test_subjects=TM_191008_01,TM_191009_01 --gpu=1
@@ -145,9 +145,9 @@ python3 main_fmri.py --save_dir=./saved_fmri0 --data_dir=/data2/DLD/Data_Convert
 
 
 
-### 3.4 Combinedデータの学習
+### 3.4 Training Combined data
 
-実行例
+Example
 
 ```shell
 python3 main_combined.py --save_dir=./saved_combined0 --data_dir=/data2/DLD/Data_Converted --model_type=combined_tcn1 --test_subjects=TM_191008_01,TM_191009_01 --preload_eeg_dir=./saved_eeg0 --preload_fmri_dir=./saved_fmri0 --gpu=1 --lr=0.001 --lr_eeg=0.001 --lr_fmri=0.01 --weight_decay=0.0 --weight_decay_eeg=0.0 --weight_decay_fmri=0.001
@@ -155,11 +155,12 @@ python3 main_combined.py --save_dir=./saved_combined0 --data_dir=/data2/DLD/Data
 
 
 
-### 3.5 テスト評価
+### 3.5 Test and Validation??
 
-テストデータを用いた評価を行うには`--test=true`オプションを付加する.
+The option of `--test=true` must be added for evaluation with test data.
 
-実行例
+
+Example
 
 ```shell
 python3 main_eeg.py --save_dir=./saved_eeg0 --data_dir=/data2/DLD/Data_Converted --model_type=tcn1 --test_subjects=TM_191008_01,TM_191009_01 --gpu=1 --test=true
@@ -171,11 +172,13 @@ python3 main_combined.py --save_dir=./saved_combined0 --data_dir=/data2/DLD/Data
 
 
 
-### 3.6 Out out memory対策
+### 3.6 Measures against Out out memory
 
-1枚目のGPUのGPUメモリが他プロセスによって占有されている場合、GPUオプション`--gpu=1`と明示的に指定している場合でも、`RuntimeError: CUDA error: out of memory`　というエラーが出てしまう場合がある.
+If the memory of the first GPU is occupied by another processes, you may#or will can# get the error `RuntimeError: CUDA error: out of memory` even when you specify the GPU option `--gpu=1`.
 
-その場合は、以下の様に`export export CUDA_VISIBLE_DEVICES=1`の環境変数を設定した上で、`--gpu=0`を指定して実行することで回避を行う.
+In such a case, the problem can be solved setting the environment variable `export export CUDA_VISIBLE_DEVICES=1` and specifying `--gpu=0`.
+
+
 
 (プログラム側からは2枚目のGPUのみが見えていて、これが1枚目のGPUとして見えるように指定している)
 
