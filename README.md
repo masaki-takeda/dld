@@ -239,13 +239,13 @@ See `dld/options.py` for details.
 | data_seed | a random seed used for Cross-Validation separation (basically unchanged) | | 0 |
 | run_seed | to fix a seed (not using a random seed), enter a specific number other than -1. (takes longer) | | -1 |
 | save_dir  | save directory  | | "saved" |
-| classify_type  | classification type/stimulus condition  | 0=FACE/PLACE 1=MALE/FEMALE, 2=ARTIFICAL/NATURAL, -1=ALL| -1 |
+| classify_type  | classification type/stimulus condition | 0=FACE/PLACE 1=MALE/FEMALE, 2=ARTIFICAL/NATURAL, -1=ALL| -1 |
 | desc  | experiment descriptions | | |
 | early_stopping| whether to use Early Stopping |  "true"/"false" | "true" |
 | parallel| whether to train on multiple GPUs |  "true"/"false" | "false" |
 | data_dir | directory of experimental data | |  "./data" |
-| eeg_normalize_type| normalize type of the eeg data　(normal=normal, pre=use the data from the period before fixations, none=no normalization|  "normal", "pre", "none" | "normal" |
-| fmri_frame_type| frame type of the fmri data (normal=normal, average=use the average data of 3TR, three=use the all data of 3TR)|  "normal", "avarage", "three" | "normal" |
+| eeg_normalize_type| normalize type of the eeg data　(normal=normal, pre=use the data from the period before fixations, none=no normalization) |  "normal", "pre", "none" | "normal" |
+| fmri_frame_type| frame type of the fmri data (normal=normal, average=use the average data of 3TR, three=use the all data of 3TR) |  "normal", "avarage", "three" | "normal" |
 | gpu | specify the GPU to use (-1=unspecified, 0=first GPU, 1=second GPU) | | -1 |
 | eeg_frame_type | frame type of the eeg data (normal=normal, filter=5ch filter, ft=FT spectorogram) | "normal", "filter", "ft" | "filter" |
 | smooth | whether to use smoothed fmri data | "true"/"false" | "true" |
@@ -261,8 +261,8 @@ See `dld/options.py` for details.
 | average_trial_size | average number of trials |  | 0 |
 | average_repeat_size | number of repetitions for padding |  | 0 |
 | kernel_size | kernel size (available in STNN and TCN) |  | 3 |
-| level_size | number of TemporalBlock (available in TCN). -1=automatically calculated |  | -1 |
-| level_hidden_size | number of channels of TemporalBlock (available in TCN). 63=residual become skip connection. |  | 63 |
+| level_size | number of TemporalBlock (available in TCN) (-1=automatically calculated) |  | -1 |
+| level_hidden_size | number of channels of TemporalBlock (available in TCN) (63=residual become skip connection) |  | 63 |
 | residual | whether to use residual connection (available in TCN) | "true"/"false" | "true" |
 
 
@@ -319,30 +319,31 @@ python3 main_grad_cam_eeg.py --save_dir=./saved_eeg0 --data_dir=/data2/DLD/Data_
 python3 main_grad_cam_fmri.py --save_dir=./saved_fmri0 --data_dir=/data2/DLD/Data_Converted --test_subjects=TM_191008_01,TM_191009_01 --gpu=1 --test=true
 ```
 
-Grad-CAM計算時は基本的に**test時**に使ったオプションと同じものを使い、そこから`run_seed`, `classify_type`, `early_stopping`, `parallel`, `patience`, `batch_size` を抜いたものを使う). また、`main_grad_cam_combined` 実行時には、学習時と異なり `preload_eeg_dir`, `preload_fmri_dir` は不要である.
+The options for computing Grad-CAM are same as those for **test** except for `run_seed`, `classify_type`, `early_stopping`, `parallel`, `patience`,and `batch_size`. 
+Moreover, `preload_eeg_dir` and `preload_fmri_dir` are eliminated for running `main_grad_cam_combined`, unlike in training.
 
 
 
 | Option | Description | Choices | Default |
 | ------------- | ------------- | ------------- | ------------- |
-| data_dir  | データディレクトリ  | | "./data" |
-| save_dir  | モデルデータおよび結果出力ディレクトリ  | | "saved" |
-| classify_type  | 分類タイプ  | 0=FACE/PLACE 1=MALE/FEMALE, 2=ARTIFICAL/NATURAL, -1=ALL| -1 |
-| eeg_normalize_type| EEGのノーマライズタイプ(nomal=通常, pre=fixation前の期間を利用, none=ノーマライズ無し|  "normal", "pre", "none" | "normal" |
-| fmri_frame_type| fMRIのフレームタイプ(nomal=通常, average=3TRの平均, three=3TRを全部利用)|  "normal", "avarage", "three" | "normal" |
-| model_type  | モデルタイプ  | 学習時と同じmodel_typeを指定する | 学習時と同じmodel_typeを指定する |
-| eeg_frame_type | EEGのフレームタイプ(normal=通常, filter=5chフィルタ, ft=FT spectorogram) | "normal", "filter", "ft" | "filter" |
-| smooth | fMRIにてsmoothingデータを利用するかどうか | "true"/"false" | "true" |
-| gpu | 利用するGPU指定(-1なら無指定,0ならGPU1枚目, 1ならGPU2枚目) | | -1 |
-| data_seed | データセットのCrossValidation分割に使用する乱数のseed(基本変更しない) | | 0 |
-| test | テストデータセットを利用するかどうか(falseならvlidationデータセット) | "true"/"false" | "true" |
-| test_subjects | test用に指定する被験者 | 被験者のIDをカンマ区切りで指定 | "TM_191008_01,TM_191009_01" |
-| fold_size | 10Foldの内の利用するFold数 |  | 10 |
-| subjects_per_fold | 1Foldに割り当てる被験者数 |  | 4 |
-| kernel_size | kernel size (STNN,TCNでのみ有効) |  | 3 |
-| level_size | num_channelsの数 (TCNでのみ有効). -1なら自動で算出 |  | -1 |
-| level_hidden_size | num_channelsのch数 (TCNでのみ有効). |  | 63 |
-| residual | residual connectionを使うかどうか(TCNでのみ有効) | "true"/"false" | "true" |
+| data_dir  | data directory | | "./data" |
+| save_dir  | output directory of model data and results | | "saved" |
+| classify_type  | classification type/stimulus condition  | 0=FACE/PLACE 1=MALE/FEMALE, 2=ARTIFICAL/NATURAL, -1=ALL| -1 |
+| eeg_normalize_type| normalize type of the eeg data　(normal=normal, pre=use the data from the period before fixations, none=no normalization) |  "normal", "pre", "none" | "normal" |
+| fmri_frame_type| frame type of the fmri data (normal=normal, average=use the average data of 3TR, three=use the all data of 3TR) |  "normal", "avarage", "three" | "normal" |
+| model_type  | model type  | specify the same model_type as Training | specify the same model_type as Training |
+| eeg_frame_type | frame type of the eeg data (normal=normal, filter=5ch filter, ft=FT spectorogram) | "normal", "filter", "ft" | "filter" |
+| smooth | whether to use smoothed fmri data | "true"/"false" | "true" |
+| gpu | specify the GPU to use (-1=unspecified, 0=first GPU, 1=second GPU) | | -1 |
+| data_seed | a random seed used for Cross-Validation separation (basically unchanged) | | 0 |
+| test | whether to use the test data set (false=use the validation data set) | "true"/"false" | "true" |
+| test_subjects | specify participants to be used for the test | enter the participants' IDs, separated by commas | "TM_191008_01,TM_191009_01" |
+| fold_size | number of Fold to be used out of 10 Fold |  | 10 |
+| subjects_per_fold | number of participants assined to 1 Fold |  | 4 |
+| kernel_size | kernel size (available in STNN and TCN) |  | 3 |
+| level_size | number of num_channels (available in TCN) (-1=automatically calculated) |  | -1 |
+| level_hidden_size | number of channels of num_channels (available in TCN) |  | 63 |
+| residual | whether to use residual connection (available in TCN) | "true"/"false" | "true" |
 
 
 
