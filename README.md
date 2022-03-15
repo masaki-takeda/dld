@@ -72,19 +72,20 @@ $ ./scripts/preprocess_alpha.sh
 
 `--behavior` Regardless of this option, the behavior data is loaded from `experiments_data/experiemnts.csv` every time when the data preprocessing. `--behavior` option only specifies whether to save the loaded behavior data. 
 
- `--eeg`, `--fmri` オプションは実際にfmri, eegオプションの前処理のコンバートを行う.
+ `--eeg`, `--fmri` options do conversion as preprocessing. #or# These options determine whether conversion is done.
 
 
 
-The export files are written out to a determined subdirectory of `--dst_base`, depending on the combination specified in `--smooth` and `--fmri_frame_type` options, and `--eeg_normalize_type` and `--eeg_frame_type` options. For example, there iis no need to separate directories for smoothing and non-smoothing; e.g., `/data2/Data_Converted_nosmoosth`. By placing the results of conversion of both smoothing and non-smoothing data, it is possible to switch which one is loaded by the optional arguments at Training. If all combinations of '--fmri_frame_type' and '--smooth' will be used for Training, it must be preprocessed for such all six combinations. The same applies to the combination of '--eeg_frame_type' and '--eeg_normalize_type'.
+The export files are written out to a determined subdirectory of `--dst_base`, depending on the combination specified in `--smooth` and `--fmri_frame_type` options, and `--eeg_normalize_type` and `--eeg_frame_type` options. For example, there is no need to separate directories for smoothing and non-smoothing; e.g., `/data2/Data_Converted_nosmoosth`. By placing the results of conversion of both smoothing and non-smoothing data, it is possible to switch which one is loaded by the optional arguments at Training. If all combinations of '--fmri_frame_type' and '--smooth' will be used for Training, it must be preprocessed for such all six combinations. The same applies to the combination of '--eeg_frame_type' and '--eeg_normalize_type'.
 
 
 
 ### 2.4 Trial-averaged data preprocessing
 
-Trial平均のpreprocessは通常のpreprocessを行った後に、同じオプションを使った上で、`--average_trial_size`, `--average_repeat_size` を追加して前処理を行う.
+Trial-averaged data preprocessing must be done after the normal data preprocessing. For the trial-averaged data preprocessing, `--average_trial_size` and `--average_repeat_size` should be added to the same options as for the normal data preprocessing.
 
-  (実行ファイルは`preprocess_average.py`に変わり、`--src_base`が不要, `--behvavior`が不要という違いはあるがそれ以外はすべて同じオプションを指定すれば良い ).  
+  (The Executable file should have all the same options as ### except for the following. The file does not require the options of`--src_base` and `--behvavior` unlike `preprocess_average.py`)
+
 
 後の学習時にも同じ `--average_trial_size`, `--average_repeat_size` オプションを利用する.
 
