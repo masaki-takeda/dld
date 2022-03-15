@@ -76,7 +76,7 @@ $ ./scripts/preprocess_alpha.sh
 
 
 
-The export files are written out to a determined subdirectory of `--dst_base`, depending on the combination specified in `--smooth` and `--fmri_frame_type` options, and `--eeg_normalize_type` and `--eeg_frame_type` options. For example, there is no need to separate directories for smoothing and non-smoothing; e.g., `/data2/Data_Converted_nosmoosth`. By placing the results of conversion of both smoothing and non-smoothing data, it is possible to switch which one is loaded by the optional arguments at Training. If all combinations of '--fmri_frame_type' and '--smooth' will be used for Training, it must be preprocessed for such all six combinations. The same applies to the combination of '--eeg_frame_type' and '--eeg_normalize_type'.
+The export files are written out to a determined subdirectory of `--dst_base`, depending on the combination specified in `--smooth` and `--fmri_frame_type` options, and `--eeg_normalize_type` and `--eeg_frame_type` options. For example, there is no need to separate directories for smoothing and non-smoothing; e.g., `/data2/Data_Converted_nosmoosth`. By placing the results of conversion of both smoothing and non-smoothing data, it is possible to switch which one is loaded by the optional arguments at Training. If all combinations of `--fmri_frame_type` and `--smooth` will be used for Training, it must be preprocessed for such all six combinations. The same applies to the combination of `--eeg_frame_type` and `--eeg_normalize_type`.
 
 
 
@@ -219,33 +219,33 @@ The arguments implemented in the `model_type` option are as follows.
 
 | model_type | Model name | Description |
 | :--------- | -------- | ---- |
-| combined1     | CombinedModel |  FMRIModelとEEGModel(`model1`)に対応したCombinedモデル    |
-| combined_filter1     |  CombinedFilterModel   | FMRIModelとEEGFilterModel2(`filter2`)に対応したFilter対応モデル  |
-| combined_tcn1     |  CombinedTCNModel   | FMRIModelとEEGTCNModel(`tcn1`)に対応したモデル  |
+| combined1     | CombinedModel | a combined model compatible with FMRIModel and EEGModel(`model1`) |
+| combined_filter1     |  CombinedFilterModel   | a filter model compatible with FMRIModel and EEGFilterModel2(`model2`) |
+| combined_tcn1     |  CombinedTCNModel   | a model compatible with FMRIModel and EEGTCNModel(`tcn1`) |
 
 
 
 
-## 4. 学習用パラメータ
+## 4. Training parameters
 
-詳細は`dld/options.py` にて
+See `dld/options.py` for details.
 
 
 
-### 4.1 EEG/fMRI/Combined共通オプション
+### 4.1 Options common to EEG/fMRI/Combined
 
-| Option | 内容 | 選択肢 |デフォルト選択肢|
+| Option | Description | Choices | Default |
 | ------------- | ------------- | ------------- | ------------- |
-| data_seed | データセットのCrossValidation分割に使用する乱数のseed(基本変更しない) | | 0 |
-| run_seed | 実行時の乱数を固定する場合に-1以外を指定する(指定すると実行は遅くなる) | | -1 |
-| save_dir  | 保存ディレクトリ  | | "saved" |
-| classify_type  | 分類タイプ  | 0=FACE/PLACE 1=MALE/FEMALE, 2=ARTIFICAL/NATURAL, -1=ALL| -1 |
-| desc  | 実験内容  | | |
-| early_stopping| Early Stopping利用するかどうか|  "true"/"false" | "true" |
-| parallel| マルチGPUで学習するかどうか |  "true"/"false" | "false" |
-| data_dir | 実験データのディレクトリ | |  "./data" |
-| eeg_normalize_type| EEGのノーマライズタイプ(nomal=通常, pre=fixation前の期間を利用, none=ノーマライズ無し|  "normal", "pre", "none" | "normal" |
-| fmri_frame_type| fMRIのフレームタイプ(nomal=通常, average=3TRの平均, three=3TRを全部利用)|  "normal", "avarage", "three" | "normal" |
+| data_seed | a random seed used for Cross-Validation separation (basically unchanged) | | 0 |
+| run_seed | to fix a seed (not using a random seed), enter a specific number other than -1. (takes longer) | | -1 |
+| save_dir  | save directory  | | "saved" |
+| classify_type  | classification type/stimulus condition  | 0=FACE/PLACE 1=MALE/FEMALE, 2=ARTIFICAL/NATURAL, -1=ALL| -1 |
+| desc  | experiment descriptions | | |
+| early_stopping| whether to use Early Stopping |  "true"/"false" | "true" |
+| parallel| whether to train on multiple GPUs |  "true"/"false" | "false" |
+| data_dir | directory of experimental data | |  "./data" |
+| eeg_normalize_type| normalize type of the eeg data　(normal=normal, pre=use the data from the period before fixations, none=no normalization|  "normal", "pre", "none" | "normal" |
+| fmri_frame_type| frame type of the fmri data (normal=normal, average=use the average data of 3TR, three=use the all data of 3TR)|  "normal", "avarage", "three" | "normal" |
 | gpu | 利用するGPU指定(-1なら無指定,0ならGPU1枚目, 1ならGPU2枚目) | | -1 |
 | eeg_frame_type | EEGのフレームタイプ(normal=通常, filter=5chフィルタ, ft=FT spectorogram) | "normal", "filter", "ft" | "filter" |
 | smooth | fMRIにてsmoothingデータを利用するかどうか | "true"/"false" | "true" |
@@ -269,7 +269,7 @@ The arguments implemented in the `model_type` option are as follows.
 
 ### 4.2 main_eeg.py実行時のみのオプション
 
-| Option | 内容 | 選択肢 |デフォルト選択肢|
+| Option | Description | Choices | Default |
 | ------------- | ------------- | ------------- | ------------- |
 | model_type  | モデルタイプ  | "model1", "model1", "rnn1", "convrnn1", "filter1", "filter2", "filter3", "stnn1", "tcn1", "tcn2"| "model1"|
 
@@ -277,7 +277,7 @@ The arguments implemented in the `model_type` option are as follows.
 
 ### 4.3 main_combined.py実行時のみのオプション
 
-| Option | 内容 | 選択肢 |デフォルト選択肢|
+| Option | Description | Choices | Default |
 | ------------- | ------------- | ------------- | ------------- |
 | fix_preloads |  PreloadしたEEG/fMRIモデルの重みを固定するか再学習するかどうか | "true" "false"| "true" |
 | preload_eeg_dir |  PreloadするEEGモデルのパス | | 無指定 |
@@ -323,7 +323,7 @@ Grad-CAM計算時は基本的に**test時**に使ったオプションと同じ�
 
 
 
-| Option | 内容 | 選択肢 |デフォルト選択肢|
+| Option | Description | Choices | Default |
 | ------------- | ------------- | ------------- | ------------- |
 | data_dir  | データディレクトリ  | | "./data" |
 | save_dir  | モデルデータおよび結果出力ディレクトリ  | | "saved" |
@@ -354,7 +354,7 @@ Grad-CAM計算時は基本的に**test時**に使ったオプションと同じ�
 
 #### EEG
 
-| Key名 | 内容 |　Shape |
+| Key名 | Description |　Shape |
 | ------------------ | ------------- | ------------- |
 | guided_bp0         | Guided-Backpropの結果, label=0に対する結果 | (*, 63, 250) |
 | guided_bp1         | Guided-Backpropの結果, label=1に対する結果 | (*, 63, 250) |
@@ -384,7 +384,7 @@ Guided-Grad-CAMを算出するには、`cam_nopool0 * guided_bp0` もしくは `
 #### fMRI
 
 
-| Key名 | 内容 |　Shape |
+| Key名 | Description |　Shape |
 | ------------------ | ------------- | ------------- |
 | cam0               | Global-Pooling利用, 最終層Grad-CAM, label=0に対する結果 | (*, 6, 7, 6)  |
 | cam1               | Global-Pooling利用, 最終層Grad-CAM, label=1に対する結果 | (*, 6, 7, 6)  |
