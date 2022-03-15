@@ -347,22 +347,22 @@ Moreover, `preload_eeg_dir` and `preload_fmri_dir` are eliminated for running `m
 
 
 
-### Grad-CAMデータ形式
+### Output of Grad-CAM
 
-`save_dir`で指定したディレクトリ以下の、`grad_cam/data`以下に、numpy形式とmatlab形式の両方で書き出される.
+The data export to `grad_cam/data` under the directory specified by `save_dir` in both numpy and matlab formats.
 
 
 
 #### EEG
 
-| Key名 | Description |　Shape |
+| Key name | Description |　Shape |
 | ------------------ | ------------- | ------------- |
-| guided_bp0         | Guided-Backpropの結果, label=0に対する結果 | (*, 63, 250) |
-| guided_bp1         | Guided-Backpropの結果, label=1に対する結果 | (*, 63, 250) |
-| cam_nopool0        | 各LevelでのGrad-CAM(poolingなし), label=0に対する結果 | (*, 7, 250) |
-| cam_nopool1        | 各LevelでのGrad-CAM(poolingなし), label=1に対する結果 | (*, 7, 250) |
-| cam0               | 各LevelでのGrad-CAM(pooling有り), label=0に対する結果 | (*, 7, 250) |
-| cam1               | 各LevelでのGrad-CAM(pooling有り), label=1に対する結果 | (*, 7, 250) |
+| guided_bp0         | Results of Guided-Backprop in label=0 | (*, 63, 250) |
+| guided_bp1         | Results of Guided-Backprop in label=1 | (*, 63, 250) |
+| cam_nopool0        | Results of Grad-CAM(no pooling) at each level in label=0 | (*, 7, 250) |
+| cam_nopool1        | Results of Grad-CAM(no pooling) at each level in label=1 | (*, 7, 250) |
+| cam0               | Results of Grad-CAM(with pooling) at each level in label=0 | (*, 7, 250) |
+| cam1               | Results of Grad-CAM(with pooling) at each level in label=1 | (*, 7, 250) |
 | raw_grad0          | 各Levelでの(有効位置を考慮しない生の)勾配, label=0に対する結果 | (*, 7, 63, 250) |
 | raw_grad1          | 各Levelでの(有効位置を考慮しない生の)勾配, label=1に対する結果 | (*, 7, 63, 250) |
 | raw_feature        | 各Levelでの(有効位置を考慮しない生の)Activation        | (*, 7, 63, 250) |
