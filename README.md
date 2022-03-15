@@ -246,72 +246,72 @@ See `dld/options.py` for details.
 | data_dir | directory of experimental data | |  "./data" |
 | eeg_normalize_type| normalize type of the eeg data　(normal=normal, pre=use the data from the period before fixations, none=no normalization|  "normal", "pre", "none" | "normal" |
 | fmri_frame_type| frame type of the fmri data (normal=normal, average=use the average data of 3TR, three=use the all data of 3TR)|  "normal", "avarage", "three" | "normal" |
-| gpu | 利用するGPU指定(-1なら無指定,0ならGPU1枚目, 1ならGPU2枚目) | | -1 |
-| eeg_frame_type | EEGのフレームタイプ(normal=通常, filter=5chフィルタ, ft=FT spectorogram) | "normal", "filter", "ft" | "filter" |
-| smooth | fMRIにてsmoothingデータを利用するかどうか | "true"/"false" | "true" |
-| test_subjects | test用に指定する被験者 | 被験者のIDをカンマ区切りで指定 | "TM_191008_01,TM_191009_01" |
-| test | テスト評価かどうか | "true"/"false" | "false" |
-| fold_size | 10Foldの内の利用するFold数 |  | 10 |
-| subjects_per_fold | 1Foldに割り当てる被験者数 |  | 4 |
-| patience | Early stoppingの継続epoch数 |  | 20 |
-| batch_size | バッチサイズ | | 10 |
-| lr | 学習率 | | 0.001 |
-| weight_decay | weight_decay正則化パラメータ | | 0.0 |
-| epochs | 学習Epoch数 | | 100 |
-| average_trial_size | 平均Trial数 |  | 0 |
-| average_repeat_size | データ水増しの繰り返し数 |  | 0 |
-| kernel_size | kernel size (STNN,TCNでのみ有効) |  | 3 |
-| level_size | TemporalBlock数 (TCNでのみ有効). -1なら自動で算出 |  | -1 |
-| level_hidden_size | TemporalBlockのch数 (TCNでのみ有効). 63ならresidualがskip接続になる |  | 63 |
-| residual | residual connectionを使うかどうか(TCNでのみ有効) | "true"/"false" | "true" |
+| gpu | specify the GPU to use (-1=unspecified, 0=first GPU, 1=second GPU) | | -1 |
+| eeg_frame_type | frame type of the eeg data (normal=normal, filter=5ch filter, ft=FT spectorogram) | "normal", "filter", "ft" | "filter" |
+| smooth | whether to use smoothed fmri data | "true"/"false" | "true" |
+| test_subjects | specify participants to be used for the test | enter the participants' IDs, separated by commas | "TM_191008_01,TM_191009_01" |
+| test | whether to be test or not | "true"/"false" | "false" |
+| fold_size | number of Fold to be used out of 10 Fold |  | 10 |
+| subjects_per_fold | number of participants assined to 1 Fold |  | 4 |
+| patience | number of continuous epochs in Early Stopping |  | 20 |
+| batch_size | batch size | | 10 |
+| lr | learning rate | | 0.001 |
+| weight_decay | regularization parameter weight_decay | | 0.0 |
+| epochs | number of training epochs | | 100 |
+| average_trial_size | average number of trials |  | 0 |
+| average_repeat_size | number of repetitions for padding |  | 0 |
+| kernel_size | kernel size (available in STNN and TCN) |  | 3 |
+| level_size | number of TemporalBlock (available in TCN). -1=automatically calculated |  | -1 |
+| level_hidden_size | number of channels of TemporalBlock (available in TCN). 63=residual become skip connection. |  | 63 |
+| residual | whether to use residual connection (available in TCN) | "true"/"false" | "true" |
 
 
 
-### 4.2 main_eeg.py実行時のみのオプション
-
-| Option | Description | Choices | Default |
-| ------------- | ------------- | ------------- | ------------- |
-| model_type  | モデルタイプ  | "model1", "model1", "rnn1", "convrnn1", "filter1", "filter2", "filter3", "stnn1", "tcn1", "tcn2"| "model1"|
-
-
-
-### 4.3 main_combined.py実行時のみのオプション
+### 4.2 Options only for main_eeg.py runtime
 
 | Option | Description | Choices | Default |
 | ------------- | ------------- | ------------- | ------------- |
-| fix_preloads |  PreloadしたEEG/fMRIモデルの重みを固定するか再学習するかどうか | "true" "false"| "true" |
-| preload_eeg_dir |  PreloadするEEGモデルのパス | | 無指定 |
-| preload_fmri_dir |  PreloadするfMRIモデルのパス | | 無指定 |
-| lr_eeg |  EEGモデル部分のlr | | 無指定 |
-| lr_fmri |  fMRI部分の学習率 | | 無指定 |
-| weight_decay_eeg |  EEGモデル部分のweight decay | | 無指定 |
-| weight_decay_fmri |  fMRI部分のweight decay | | 無指定 |
-| model_type  | モデルタイプ  | "combined1", "combined_filter1", "combined_tcn1"| "combined_tcn1" |
-| combined_hidden_size  | Combined FC部分のhiddenサイズ| | 128 |
-| combined_layer_size  | Combined FC部分の追加層数 | | 0 |
-
-
-`lr`は、最後のFC部分の学習率の指定. `lr_eeg`, `lr_fmri`はEEG, fMRI部分の学習率の指定.
-`weight_decay`は、最後のFC部分のweight decayの指定. `weight_decay_eeg`, `weight_decay_fmri`はEEG, fMRI部分のweight decayの指定.
-
-`lr_eeg`, `lr_fmri` を指定しなかった場合は、`lr` が代わりにその部分に指定される. `weight_decay` も同様.
-
-
-`preload_eeg_dir`もしくは、`preload_frmi_dir`のどちらかを指定しなかった場合はEEG, fMRIともにpreloadはされない. (片方のみのprelaod指定は不可)
-
-
-`combined_hidden_size` および `combined_layer_size` を指定することでEEG, fMRI層の結合後のFull Connect層の追加分を増やすことができる. `combined_hidden_size=128`, `combined_layer_size=0`にすると従来と同じ内容となる.
+| model_type  | model type  | "model1", "model1", "rnn1", "convrnn1", "filter1", "filter2", "filter3", "stnn1", "tcn1", "tcn2"| "model1"|
 
 
 
-## 6. Grad-CAM可視化
+### 4.3 Options only for main_combined.py runtime
 
-Grad-CAMの可視化は、データの出力と、結果データの可視化を以下の手順で行う.
+| Option | Description | Choices | Default |
+| ------------- | ------------- | ------------- | ------------- |
+| fix_preloads | whether to retrain the weights of the preloaded EEG/fMRI model | "true" "false"| "true" |
+| preload_eeg_dir |  path to the preloaded EEG model | | unspecified |
+| preload_fmri_dir |  path to the preloaded fMRI model | | unspecified |
+| lr_eeg | learning rate of the EEG model | | unspecified |
+| lr_fmri |  learning rate of the fMRI model | | unspecified |
+| weight_decay_eeg | weight decay of the EEG model | | unspecified |
+| weight_decay_fmri |  weight decay of the fMRI model | | unspecified |
+| model_type  | model type  | "combined1", "combined_filter1", "combined_tcn1"| "combined_tcn1" |
+| combined_hidden_size  | hidden size of Combined FC part | | 128 |
+| combined_layer_size  | additional layer size of Combined FC part | | 0 |
+
+
+`lr` specify the learning rate for the last FC part. `lr_eeg` and `lr_fmri` specify the learning rate for the EEG and fMRI part.
+`weight_decay` specify the weight decay for the last FC part. `weight_decay_eeg` and `weight_decay_fmri` specify the weight decay for the EEG and fMRI part.
+
+If `lr_eeg` and/or `lr_fmri` are not specified, `lr` is applied instead. `weight_decay` is same manner.
+
+
+If either `preload_eeg_dir` or `preload_frmi_dir` is not specified, both EEG and fMRI model are not preloaded. (Only one side is not acceptable)
+
+
+Specifying `combined_hidden_size` and `combined_layer_size` can increase the additional Full Connection layer that is combined by EEG and fMRI layer.
+To keep it the same as so far, input `combined_hidden_size=128` and `combined_layer_size=0`.
 
 
 
-実行例:
+## 6. Visualization of Grad-CAM
 
+Output data and visualize the results as follows.
+
+
+
+Example
 
 ```shell
 python3 main_grad_cam_eeg.py --save_dir=./saved_eeg0 --data_dir=/data2/DLD/Data_Converted --model_type=tcn1 --test_subjects=TM_191008_01,TM_191009_01 --gpu=1 --test=true
