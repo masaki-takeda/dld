@@ -363,9 +363,9 @@ The data export to `grad_cam/data` under the directory specified by `save_dir` i
 | cam_nopool1        | Results of Grad-CAM(no pooling) at each level in label=1 | (*, 7, 250) |
 | cam0               | Results of Grad-CAM(with pooling) at each level in label=0 | (*, 7, 250) |
 | cam1               | Results of Grad-CAM(with pooling) at each level in label=1 | (*, 7, 250) |
-| raw_grad0          | 各Levelでの(有効位置を考慮しない生の)勾配, label=0に対する結果 | (*, 7, 63, 250) |
-| raw_grad1          | 各Levelでの(有効位置を考慮しない生の)勾配, label=1に対する結果 | (*, 7, 63, 250) |
-| raw_feature        | 各Levelでの(有効位置を考慮しない生の)Activation        | (*, 7, 63, 250) |
+| raw_grad0          | Results of gradient(ignoring effective position) at each level in label=0 | (*, 7, 63, 250) |
+| raw_grad1          | Results of gradient(ignoring effective position) at each level in label=1 | (*, 7, 63, 250) |
+| raw_feature        | Results of activation(ignoring effective position) at each level | (*, 7, 63, 250) |
 | flat_active_grad0  | 各Levelでのdilated convでの有効位置のみを抜き出した勾配, level=0に対する結果 | (*, 7, []) |
 | flat_active_grad1  | 各Levelでのdilated convでの有効位置のみを抜き出した勾配, level=1に対する結果 | (*, 7, []) |
 | flat_active_feature| 各Levelでのdilated convでの有効位置のみを抜き出したActivation | (*, 7, []) |
