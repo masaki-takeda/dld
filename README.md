@@ -155,7 +155,7 @@ python3 main_combined.py --save_dir=./saved_combined0 --data_dir=/data2/DLD/Data
 
 
 
-### 3.5 Test and Validation??
+### 3.5 Test
 
 The option of `--test=true` must be added for evaluation with test data.
 
@@ -174,13 +174,12 @@ python3 main_combined.py --save_dir=./saved_combined0 --data_dir=/data2/DLD/Data
 
 ### 3.6 Measures against Out out memory
 
-If the memory of the first GPU is occupied by another processes, you may#or will can# get the error `RuntimeError: CUDA error: out of memory` even when you specify the GPU option `--gpu=1`.
+If the memory of the first GPU is occupied by another processes, you may get the error `RuntimeError: CUDA error: out of memory` even when you specify the GPU option `--gpu=1`.
 
 In such a case, the problem can be solved setting the environment variable `export export CUDA_VISIBLE_DEVICES=1` and specifying `--gpu=0`.
 
+(The program will recognize the second GPU as the first one.)
 
-
-(プログラム側からは2枚目のGPUのみが見えていて、これが1枚目のGPUとして見えるように指定している)
 
 ```shell
 $ export CUDA_VISIBLE_DEVICES=1
@@ -189,37 +188,36 @@ $ python3 main_combined.py --save_dir=./saved_combined0 --data_dir=/data2/DLD/Da
 
 
 
-### 3.7 モデルタイプ
+### 3.7 Model type
 
-現在実装済みの `model_type`引数は以下の通りである。
-
+The arguments implemented in the `model_type` option are as follows.
 
 
 #### EEG
 
-| model_type | モデル名 | 内容 |
+| model_type | Model name | Description |
 | :--------- | ------------------ | ---- |
-| model1     | EEGModel           |1次元Convを使ったモデル  |
-| model2     | EEGModel2          |EEGModelの1層目のstrideを大きくしたもの |
-| rnn1       | EEGRNNModel        |RNN(LSTM)を利用したもの   |
-| convrnn1   | EEGConvRNNModel    |1次元Convの後にLSTMを付加したもの |
-| filter1    | EEGFilterModel     |横:250, 縦:63, 色:5chの画像と同様なものとして2次元の畳み込みを行ったFilter対応モデル      |
-| filter2    | EEGFilterModel2    | 横:250, 縦:5, 色:63chの画像と同様なものとして2次元の畳み込みを行ったFilter対応モデル     |
-| filter3    | EEGFilterModel3    | 一番最初にFullコネクト層を入れた後に1次元Convを入れたFilter対応モデル  |
-| ft1        | EEGFtModel         | FT Spectrogram対応モデル |
+| model1     | EEGModel           | 1D Conv model |
+| model2     | EEGModel2          | a model with a larger stride on the first layer of EEGModel |
+| rnn1       | EEGRNNModel        | RNN(LSTM) model |
+| convrnn1   | EEGConvRNNModel    | a model with 1D Conv followed by LSTM applied |
+| filter1    | EEGFilterModel     | a filter model with 2D convolution: the input data is considered as an image of width:250, height:63, and color:5ch |
+| filter2    | EEGFilterModel2    | a filter model with 2D convolution: the input data is considered as an image of width:250, height:5, and color:63ch |
+| filter3    | EEGFilterModel3    | a filter model with the first connection layer followed by 1D Conv applied |
+| ft1        | EEGFtModel         | a model compatible with FT Spectrogram |
 | stnn1      | EEGSTNNModel       | STNN model |
-| tcn1      | EEGSTCNModel       | TCN model 最終stepのみ利用 |
-| tcn2      | EEGSTCNModel2       | TCN model 全step利用 |
+| tcn1      | EEGSTCNModel       | TCN model: use only the last step |
+| tcn2      | EEGSTCNModel2       | TCN model: use all steps |
 
 #### fMRI
 
-| model_type | モデル名 | 内容 |
+| model_type | Model name | Description |
 | :--------- | ------------------ | ---- |
-|            | FMRIModel          |3次元Convを使ったモデル  |
+|            | FMRIModel          | 3D Conv model |
 
 #### Combined
 
-| model_type | モデル名 | 内容 |
+| model_type | Model name | Description |
 | :--------- | -------- | ---- |
 | combined1     | CombinedModel |  FMRIModelとEEGModel(`model1`)に対応したCombinedモデル    |
 | combined_filter1     |  CombinedFilterModel   | FMRIModelとEEGFilterModel2(`filter2`)に対応したFilter対応モデル  |
