@@ -24,7 +24,7 @@ class Trial(object):
 
     @property
     def trial_index(self):
-        """ 0始まりのindex """
+        """ 0 start index """
         return self.trial_id - 1
 
     @property
@@ -38,11 +38,11 @@ class Trial(object):
 
 
 class Behavior(object):
-    """ PshchToolboxデータ. (preprocess時に利用) """
+    """ PshchToolbox data (for preprocessing) """
     
     def __init__(self, src_base, date, subject, run, reject_trials):
         #suffix = ""
-        # 反応時間が2秒を超えたトライアルを除外したバージョン
+        #version excluding trials with reaction times longer than 2 secs
         suffix = "_2sdelete"
         
         mat_path = "{0}/PsychToolbox/TM_{1}_{2:0>2}/TM_{1}_{2:0>2}_{3:0>2}{4}.mat".format(
@@ -51,15 +51,15 @@ class Behavior(object):
         csv_path = "{0}/PsychToolbox/TM_{1}_{2:0>2}/TM_{1}_{2:0>2}_{3:0>2}{4}.csv".format(
             src_base, date, subject, run, suffix)
         
-        self.date    = date    # 191008など
+        self.date    = date    # 191008 etc.
         self.subject = subject # 1, 2
         self.run     = run
 
-        # MATLAB ver7の形式の場合
+        # for MATLAB ver7 format
         #mat_all_data = io.loadmat(mat_path)
         #head_time = mat_all_data['time']['TR'][0][0][0][0]
 
-        # MATLAB ver7.3の形式の場合
+        # for MATLAB ver7.3 format
         with h5py.File(mat_path,'r') as f:
             head_time = f['time']['TR'][0][0]
         
@@ -70,12 +70,12 @@ class Behavior(object):
         # (50, 6)
         # Categ, Identity, Angle, IMGtime, Correct, Trial
         
-        # IMGtimeから先頭時刻と10秒(=5TR)を引いておく
+        # Subtract head time plus 10 seconds (=5TR) from IMGtime
         csv_data[:,3] -= (head_time + 10.0)
 
-        # Identityはサブカテゴリを表し
-        # Categ=1(Face)の場合は1,2が男、3,4が女 (M1, M2, F1, F2)
-        # Categ=2(Object)の場合は1,2がArtificial, 3,4がNatural)
+        # Identity represents subcategories
+        # If Categ=1(Face), 1 and 2 are Male, 3 and 4 are Female (M1, M2, F1, F2)
+        # If Categ=2(Object), 1 and 2 are Artificial, 3 and 4 are Natural
         
         trials = []
         
@@ -88,9 +88,9 @@ class Behavior(object):
             trial_id = int(csv_row[5])
             
             if (category != 0) and correct and (trial_id not in reject_trials):
-                # Fixation trialを除外
-                # 正解しなかったtrialを除外
-                # Reject trialを除外
+                # excluding Fixation trial
+                # excluding Incorrect trial
+                # excluding Reject trial
                 trial = Trial(category, identity, angle, time, trial_id)
                 trials.append(trial)
         
@@ -98,7 +98,7 @@ class Behavior(object):
         
     @property
     def subject_id(self):
-        # "TM_191008_01" の形式の被験者IDを返す.
+        # Find data in "TM_191008_01" format, and return their subject IDs.
         return "TM_{0}_{1:0>2}".format(self.date, self.subject)
         
     @property
