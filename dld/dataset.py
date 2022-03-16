@@ -6,7 +6,7 @@ from eeg import EEG
 from behavior import Behavior
 
 
-# data_typeに与える値
+# Data Type
 DATA_TYPE_TRAIN      = 0
 DATA_TYPE_VALIDATION = 1
 DATA_TYPE_TEST       = 2
@@ -37,10 +37,10 @@ EEG_FRAME_TYPE_FILTER = 1
 EEG_FRAME_TYPE_FT     = 2
 
 
-# マスクを利用する場合Trueにする
+# Enter True if mask is used
 DEBUG_USE_EEG_MASK = False
 
-# マスクに指定するChannelの数値
+# Channel numbers for the mask
 CH_Fp1  = 0
 CH_Fp2  = 1
 CH_F3   = 2
@@ -126,23 +126,23 @@ class BrainDataset(Dataset):
                  debug=False):
         """
         use_fmri:
-           (bool) fMRIデータを利用するかどうか
+           (bool) whether to use the fMRI data
         use_eeg:
-           (bool) EEGデータを利用するかどうか
+           (bool) whether to use the EEG data
         fmri_frame_type:
-           (str) fMRIデータで1TRのみ利用, 3TRの平均を利用 or 3TR全部を利用
+           (str) how the data is used: the data of 1TR, the average data of 3TR, or the all data of 3TR
         eeg_normalize_type:
-           (str) EEGのノーマライズタイプ
+           (str) normalize type of the EEG data
         eeg_frame_type:
-           (str) EEGデータのタイプ. (normal, filter, ft)
+           (str) frame type of the eeg data (normal, filter, ft)
         use_smooth:
-           (bool) fMRIでsmoothingを適用したデータを利用するかどうか
+           (bool) whether to use smoothed fmri data
         average_trial_size:
-           (int) 平均をとるtrial数
+           (int) average number of trials
         average_repeat_size:
-           (int) 平均をとる時のリピート数
+           (int) number of repetitions for padding
         subjects_per_fold:
-           (int) 1Foldあたりの被験者数
+           (int) number of participants assined to one Fold
         """
         self.use_fmri = use_fmri
         self.use_eeg = use_eeg
@@ -184,13 +184,13 @@ class BrainDataset(Dataset):
             self.use_trial_average = False
 
         if self.use_eeg:
-            # EEGデータロード
+            # Loading EEG data
             eeg_suffix = ""
             if self.eeg_frame_type == EEG_FRAME_TYPE_FILTER:
-                # EEGにてfilterを利用する場合はファイル名に"_filter"がつく
+                # When using filters in EEG, "_filter" is added to the file name
                 eeg_suffix = "_filter"
             elif self.eeg_frame_type == EEG_FRAME_TYPE_FT:
-                # EEGにてFT spectrogramを利用する場合はファイル名に"_ft"がつく
+                # When using FT_spectrogram in EEG, "_ft" is added to the file name
                 eeg_suffix = "_ft"
 
             if self.eeg_normalize_type == EEG_NORMALIZE_TYPE_NORMAL:
@@ -204,7 +204,7 @@ class BrainDataset(Dataset):
                     eeg_suffix))
 
             if self.use_trial_average:
-                # Trial平均利用時
+                # For using trial average
                 eeg_data_path = eeg_data_path + "_a{}_r{}_ct{}".format(average_trial_size,
                                                                        average_repeat_size,
                                                                        classify_type)
