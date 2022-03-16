@@ -380,9 +380,8 @@ To calculate Guided-Grad-CAM, input `cam_nopool0 * guided_bp0` or `cam_nopool1 *
 `cam_nopool0`, `cam_nopool1`, `cam0`,and `cam1` are complement values to make gradient x activation 250 frames. The gradient x activation are computed based on `flat_active_grad0`, `flat_active_grad1`,and `flat_active_feature`. 
 
 Although `flat_active_grad0`, `flat_active_grad1`, and `flat_active_feature` have different number of elements at each level, they are flattened into a one-dimensional array to fit the different number of elements into an array.
-For example: although the number of levels is 7 
+For example, the number of levels is 7 when kernel_size=2. The active gradient (i.e., effective gradient) have a one-dimensional array:`(15750), (7875), (3969), (1953), (945), (441), (189)` in which `(63, 250), (63, 125), (63, 63), (63, 31), (63, 15), (63, 7), (63, 3)` are flattened.
 
-の場合、Level数は7になるが、acvtiveなgradient (有効なgradient)は各Levelにおいて `(63, 250), (63, 125), (63, 63), (63, 31), (63, 15), (63, 7), (63, 3)` となるが、それをflat化した1次元の配列 `(15750), (7875), (3969), (1953), (945), (441), (189)` として保持している.  `flat_active_*` は確認用で、実際の可視化にはそれらをもとに処理をした`cam_nopool*`や、`cam*`を利用することを想定している.
 
 
 #### fMRI
@@ -390,56 +389,54 @@ For example: although the number of levels is 7
 
 | Key名 | Description |　Shape |
 | ------------------ | ------------- | ------------- |
-| cam0               | Global-Pooling利用, 最終層Grad-CAM, label=0に対する結果 | (*, 6, 7, 6)  |
-| cam1               | Global-Pooling利用, 最終層Grad-CAM, label=1に対する結果 | (*, 6, 7, 6)  |
-| cam_nopool0        | Global-Pooling利用しない, 最終層Grad-CAM, label=0に対する結果 | (*, 6, 7, 6) |
-| cam_nopool1        | Global-Pooling利用しない, 最終層Grad-CAM, label=1に対する結果 | (*, 6, 7, 6) |
-| guided_bp0         | Guided-Backpropの結果, label=0に対する結果 | (*, 79, 95, 79) |
-| guided_bp1         | Guided-Backpropの結果, label=1に対する結果 | (*, 79, 95, 79) |
-| guided_cam_nopool0 | Global-Pooling利用しない, Guided-GradCAMの結果, label=0に対する結果 | (*, 79, 95, 79) |
-| guided_cam_nopool1 | Global-Pooling利用しない, Guided-GradCAMの結果, label=1に対する結果 | (*, 79, 95, 79) |
-| label              | 正解ラベル (0 or 1) | (1, *) |
-| predicted_label    | 予測ラベル (predicted_prob > 0.5なら1, そうでなければ0) | (1, *) |
-| predicted_prob     | 予測確率 (0.0~1.0) | (1, *) |
+| cam0               | Results for label=0 with Global-Pooling and final Grad-CAM #or# Results of final Grad-CAM with Global-Pooling in label=0| (*, 6, 7, 6)  |
+| cam1               | Results for label=1 with Global-Pooling and final Grad-CAM | (*, 6, 7, 6)  |
+| cam_nopool0        | Results for label=0 with final Grad-CAM and no Global-Pooling | (*, 6, 7, 6) |
+| cam_nopool1        | Results for label=1 with final Grad-CAM and no Global-Pooling | (*, 6, 7, 6) |
+| guided_bp0         | Results of Guided-Backprop in label=0 | (*, 79, 95, 79) |
+| guided_bp1         | Results of Guided-Backprop in label=1 | (*, 79, 95, 79) |
+| guided_cam_nopool0 | Results of Guided-Grad-CAM without Global-Pooling in label=0 | (*, 79, 95, 79) |
+| guided_cam_nopool1 | Results of Guided-Grad-CAM without Global-Pooling in label=1 | (*, 79, 95, 79) |
+| label              | correct label (0 or 1) | (1, *) |
+| predicted_label    | predicted label ((predicted_prob>0.5): 1, otherwise: 0) | (1, *) |
+| predicted_prob     | predicted probability (0.0~1.0) | (1, *) |
 
-`label`が1で`predicted_label`が1の場合は予測が正しかった場合であり、その時`guided_cam_nopool1が(正解である)ラベル1を予測した時のGuided-Grad-CAMの結果となる.
-`
+When `label` and `predicted_label` show 1, the prediction is correct and `guided_cam_nopool1` indicates the result of Guided-Grad-CAM when the label=1 (i.e., correct answer) is predicted.
 
-`label`が1で`predicted_label`が0の場合は、予測が外れたことを示す.
+When `label` shows 1 and `predicted_label` shows 0, the prediction is wrong.
 
 
 
 ## 8. Grid search
 
-グリッドサーチを行うには、`main_grid_search_example.py` を参考にしてグリッドサーチ用のスクリプトを用意して実行する.
+To perform grid search, prepare and run the script for grid search referring to `main_grid_search_example.py`.
 
+Specify an executable file, a save directory name, grid search options, and fixed options as follows.
 
-スクリプトには以下の様に、実行ファイル、保存ディレクトリ名prefix, グリッドサーチ対象オプション、固定オプションを指定する.
 
 ```python
-#-----[変更箇所 ここから]-----
-# 実行するファイル名を指定
+#-----[changes from here]-----
+# specify an executable file
 target_file = "main_eeg.py"
 
 save_dir_prefix = "./saved_eeg"
-# 保存ディレクトリは、"./saved_eeg_0_0", "./saved_eeg_0_1" ... などとなる.
+# the save directory name should be "./saved_eeg_0_0", "./saved_eeg_0_1" ... and so on.
 
-# グリッドサーチ対象オプション
-# 対処のオプションを配列で指定する
+# grid search options
+# specify options as an array
 variable_options["lr"]           = ["0.1", "0.01", "0.001"]
 variable_options["weight_decay"] = ["0.0", "0.01", "0.1"]
 
-# 固定オプション
+# fixed options 
 fixed_options["data_dir"]      = "./data2/DLD/Data_Converted"
 fixed_options["model_type"]    = "filter2"
 fixed_options["test_subjects"] = "TM_191008_01,TM_191009_01"
-fixed_options["fold_size"]     = "1" # 1Foldのみを対象にして高速化する場合
-#-----[変更箇所 ここまで]-----
+fixed_options["fold_size"]     = "1" #To speed up, only one Fold can be targeted
+#-----[to here]-----
 ```
 
 
-
-サンプルと同様なスクリプトを用意して実行する.
+Prepare and run a script in the same manner as the sample.
 
 ```shell
 python3 main_grid_search_sample.py
@@ -447,8 +444,8 @@ python3 main_grid_search_sample.py
 
 
 
-上記の例だと実行後に、`./saved_eeg_summary/summary.tx`に以下に様にサマリが出力される.
- (varidationのスコアが一番よかったものに**best**という表示がされる.)
+In the above example, a summary is output to `./saved_eeg_summary/summary.tx` after execution as follows.
+(The one with the best varidation score will be labeled **best**.)
 
 ```
 [ClasslfyType0]
@@ -466,6 +463,6 @@ python3 main_grid_search_sample.py
   [best] ./saved_eeg_0_0: 53.333333333333336 (lr=0.1 weight_decay=0.0)
   [    ] ./saved_eeg_0_1: 53.333333333333336 (lr=0.1 weight_decay=0.01)
   [    ] ./saved_eeg_0_2: 46.666666666666664 (lr=0.1 weight_decay=0.1)
-...以下略  
+...
 ```
 
