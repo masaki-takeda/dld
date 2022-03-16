@@ -387,7 +387,7 @@ For example, the number of levels is 7 when kernel_size=2. The active gradient (
 #### fMRI
 
 
-| Key名 | Description |　Shape |
+| Key name | Description |　Shape |
 | ------------------ | ------------- | ------------- |
 | cam0               | Results for label=0 with Global-Pooling and final Grad-CAM #or# Results of final Grad-CAM with Global-Pooling in label=0| (*, 6, 7, 6)  |
 | cam1               | Results for label=1 with Global-Pooling and final Grad-CAM | (*, 6, 7, 6)  |
