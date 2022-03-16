@@ -349,7 +349,7 @@ Moreover, `preload_eeg_dir` and `preload_fmri_dir` are eliminated for running `m
 
 ### Output of Grad-CAM
 
-The data export to `grad_cam/data` under the directory specified by `save_dir` in both numpy and matlab formats.
+The data export to `grad_cam/data` under the `save_dir` directory in both numpy and matlab formats.
 
 
 
@@ -363,23 +363,26 @@ The data export to `grad_cam/data` under the directory specified by `save_dir` i
 | cam_nopool1        | Results of Grad-CAM(no pooling) at each level in label=1 | (*, 7, 250) |
 | cam0               | Results of Grad-CAM(with pooling) at each level in label=0 | (*, 7, 250) |
 | cam1               | Results of Grad-CAM(with pooling) at each level in label=1 | (*, 7, 250) |
-| raw_grad0          | Results of gradient(ignoring effective position) at each level in label=0 | (*, 7, 63, 250) |
-| raw_grad1          | Results of gradient(ignoring effective position) at each level in label=1 | (*, 7, 63, 250) |
-| raw_feature        | Results of activation(ignoring effective position) at each level | (*, 7, 63, 250) |
-| flat_active_grad0  | 各Levelでのdilated convでの有効位置のみを抜き出した勾配, level=0に対する結果 | (*, 7, []) |
-| flat_active_grad1  | 各Levelでのdilated convでの有効位置のみを抜き出した勾配, level=1に対する結果 | (*, 7, []) |
-| flat_active_feature| 各Levelでのdilated convでの有効位置のみを抜き出したActivation | (*, 7, []) |
-| label              | 正解ラベル (0 or 1) | (1, *) |
-| predicted_label    | 予測ラベル (predicted_prob > 0.5なら1, そうでなければ0) | (1, *) |
-| predicted_prob     | 予測確率 (0.0~1.0) | (1, *) |
+| raw_grad0          | Results of gradient(computed without effective position) at each level in label=0 | (*, 7, 63, 250) |
+| raw_grad1          | Results of gradient(computed without effective position) at each level in label=1 | (*, 7, 63, 250) |
+| raw_feature        | Results of activation(computed without effective position) at each level | (*, 7, 63, 250) |
+| flat_active_grad0  | Results of gradient(computed only from effective position in dilated conv) at each level in level=0 | (*, 7, []) |
+| flat_active_grad1  | Results of gradient(computed only from effective position in dilated conv) at each level in level=1 | (*, 7, []) |
+| flat_active_feature| Results of activation(computed only from effective position in dilated conv) at each level | (*, 7, []) |
+| label              | correct label (0 or 1) | (1, *) |
+| predicted_label    | predicted label ((predicted_prob>0.5): 1, otherwise: 0) | (1, *) |
+| predicted_prob     | predicted probability (0.0~1.0) | (1, *) |
 
-(※リスト内の`7` の部分は`kernel_size=2` の場合の例で、`kernel_size` を変えると値は変わる)
+(*`7` in the above list are examples for `kernel_size=2`. If the `kernel_size` changes, so will the values.)
 
-Guided-Grad-CAMを算出するには、`cam_nopool0 * guided_bp0` もしくは `cam_nopool1 * guided_bp1` を利用する.
-`cam_nopool0`, `cam_nopool1`, `cam0`, `cam1`は、`flat_active_grad0`, `flat_active_grad1`, `flat_active_feature` の値を元に算出したgradient x activationの値を250frame分になる様に補完をしたものである.
+To calculate Guided-Grad-CAM, input `cam_nopool0 * guided_bp0` or `cam_nopool1 * guided_bp1`.
 
-`flat_active_grad0`, `flat_active_grad1`, `flat_active_feature` は各Levelにおいて要素数が異なるが、その異なる要素数を1つのarrayに収めるために1次元の配列にflat化している. 例えば、kernel_size=2の場合、Level数は7になるが、acvtiveなgradient (有効なgradient)は各Levelにおいて `(63, 250), (63, 125), (63, 63), (63, 31), (63, 15), (63, 7), (63, 3)` となるが、それをflat化した1次元の配列 `(15750), (7875), (3969), (1953), (945), (441), (189)` として保持している.  `flat_active_*` は確認用で、実際の可視化にはそれらをもとに処理をした`cam_nopool*`や、`cam*`を利用することを想定している.
+`cam_nopool0`, `cam_nopool1`, `cam0`,and `cam1` are complement values to make gradient x activation 250 frames. The gradient x activation are computed based on `flat_active_grad0`, `flat_active_grad1`,and `flat_active_feature`. 
 
+Although `flat_active_grad0`, `flat_active_grad1`, and `flat_active_feature` have different number of elements at each level, they are flattened into a one-dimensional array to fit the different number of elements into an array.
+For example: although the number of levels is 7 
+
+の場合、Level数は7になるが、acvtiveなgradient (有効なgradient)は各Levelにおいて `(63, 250), (63, 125), (63, 63), (63, 31), (63, 15), (63, 7), (63, 3)` となるが、それをflat化した1次元の配列 `(15750), (7875), (3969), (1953), (945), (441), (189)` として保持している.  `flat_active_*` は確認用で、実際の可視化にはそれらをもとに処理をした`cam_nopool*`や、`cam*`を利用することを想定している.
 
 
 #### fMRI
