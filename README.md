@@ -70,7 +70,7 @@ $ ./scripts/preprocess_alpha.sh
 | dst_base | location of export files |  | "./data" |
 | fmri_frame_type | frame type of the fmri data | "normal", "average", "three" | "normal" |
 
-`--behavior` Regardless of this option, the behavior data is loaded from `experiments_data/experiemnts.csv` every time when the data is preprocessing. `--behavior` option only specifies whether to save the loaded behavior data. 
+Regardless of `--behavior` option, the behavior data is loaded from `experiments_data/experiemnts.csv` every time when the data is preprocessing. `--behavior` option only specifies whether to save the loaded behavior data. 
 
  `--eeg`, `--fmri` options do conversion as preprocessing. #or# These options determine whether conversion is done.
 
@@ -157,7 +157,7 @@ python3 main_combined.py --save_dir=./saved_combined0 --data_dir=/data2/DLD/Data
 
 ### 3.5 Test
 
-The option of `--test=true` must be added for evaluation with test data.
+The `--test=true` option must be added for evaluation with test data.
 
 
 Example
