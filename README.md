@@ -14,15 +14,15 @@ $ ./scripts/build.sh
 
 ## 2. Preprocessing
 
-It must be performed the following steps for preprocessing when new experimental data are added or the preprocessing method is changed.
+When new experimental data sets are imported, the following preprocessing steps should be performed.
 
 
 
-### 2.1 Update the Excel file controling experimental data 
+### 2.1 Update the Excel file controlling the experimental data 
 
-Update and save as `dld/experiment_data/experiments.xlsx`
+Update and save it as `dld/experiment_data/experiments.xlsx`
 
-Save also in .csv format as `dld/experiment_data/experiments.csv`
+Note that the file should be saved in .csv format: `dld/experiment_data/experiments.csv`
 
 
 In these Excel files, the experimental data must be formatted as follows. (Enter 0 for 'valid', if the data is not available.)
@@ -49,7 +49,7 @@ $ ./scripts/run.sh
 
 ### 2.3 Data preprocessing
 
-Convert Matlab and csv data to numpy format.
+Convert Matlab and .csv data to numpy format.
 
 ```shell
 $ ./scripts/preprocess_alpha.sh
@@ -70,19 +70,19 @@ $ ./scripts/preprocess_alpha.sh
 | dst_base | location of export files |  | "./data" |
 | fmri_frame_type | frame type of the fmri data | "normal", "average", "three" | "normal" |
 
-`--behavior` Regardless of this option, the behavior data is loaded from `experiments_data/experiemnts.csv` every time when the data preprocessing. `--behavior` option only specifies whether to save the loaded behavior data. 
+`--behavior` Regardless of this option, the behavior data is loaded from `experiments_data/experiemnts.csv` every time when the data is preprocessing. `--behavior` option only specifies whether to save the loaded behavior data. 
 
  `--eeg`, `--fmri` options do conversion as preprocessing. #or# These options determine whether conversion is done.
 
 
 
-The export files are written out to a determined subdirectory of `--dst_base`, depending on the combination specified in `--smooth` and `--fmri_frame_type` options, and `--eeg_normalize_type` and `--eeg_frame_type` options. For example, there is no need to separate directories for smoothing and non-smoothing; e.g., `/data2/Data_Converted_nosmoosth`. By placing the results of conversion of both smoothing and non-smoothing data, it is possible to switch which one is loaded by the optional arguments at Training. If all combinations of `--fmri_frame_type` and `--smooth` will be used for Training, it must be preprocessed for such all six combinations. The same applies to the combination of `--eeg_frame_type` and `--eeg_normalize_type`.
+The exported files are written out to a determined subdirectory of `--dst_base`, depending on the combination specified in `--smooth` and `--fmri_frame_type` options as well as in `--eeg_normalize_type` and `--eeg_frame_type` options. For example, there is no need to separate directories for smoothing and non-smoothing; e.g., `/data2/Data_Converted_nosmoosth`. By placing the results of conversion of both smoothing and non-smoothing data, it is possible to switch which one is loaded by the optional arguments at Training. If all combinations of `--fmri_frame_type` and `--smooth` will be used for Training, it must be preprocessed for such all six combinations. The same applies to the combination of `--eeg_frame_type` and `--eeg_normalize_type`.
 
 
 
 ### 2.4 Trial-averaged data preprocessing
 
-Trial-averaged data preprocessing must be done after the normal data preprocessing. For the trial-averaged data preprocessing, `--average_trial_size` and `--average_repeat_size` should be added to the same options as for the normal data preprocessing.
+Trial-averaged data preprocessing must be done after the normal ##above?## data preprocessing. For the trial-averaged data preprocessing, `--average_trial_size` and `--average_repeat_size` should be added to the same options as for the normal data preprocessing.
 
   (The Executable file should have all the same options as ### except for the following. It does not require the options of `--src_base` and `--behavior` unlike `preprocess_average.py`)
 
@@ -176,7 +176,7 @@ python3 main_combined.py --save_dir=./saved_combined0 --data_dir=/data2/DLD/Data
 
 If the memory of the first GPU is occupied by another processes, you may get the error `RuntimeError: CUDA error: out of memory` even when you specify the GPU option `--gpu=1`.
 
-In such a case, the problem can be solved setting the environment variable `export export CUDA_VISIBLE_DEVICES=1` and specifying `--gpu=0`.
+In such a case, the problem can be solved by setting the environment variable `export export CUDA_VISIBLE_DEVICES=1` and specifying `--gpu=0`.
 
 (The program will recognize the second GPU as the first one.)
 
@@ -291,10 +291,10 @@ See `dld/options.py` for details.
 | combined_layer_size  | additional layer size of Combined FC part | | 0 |
 
 
-`lr` specify the learning rate for the last FC part. `lr_eeg` and `lr_fmri` specify the learning rate for the EEG and fMRI part.
-`weight_decay` specify the weight decay for the last FC part. `weight_decay_eeg` and `weight_decay_fmri` specify the weight decay for the EEG and fMRI part.
+`lr` specifies the learning rate for the last FC part. `lr_eeg` and `lr_fmri` specify the learning rate for the EEG and fMRI part.
+`weight_decay` specifies the weight decay for the last FC part. `weight_decay_eeg` and `weight_decay_fmri` specify the weight decay for the EEG and fMRI part.
 
-If `lr_eeg` and/or `lr_fmri` are not specified, `lr` is applied instead. `weight_decay` is same manner.
+If `lr_eeg` and/or `lr_fmri` are not specified, `lr` is applied instead. `weight_decay` acts in the same manner.
 
 
 If either `preload_eeg_dir` or `preload_frmi_dir` is not specified, both EEG and fMRI model are not preloaded. (Only one side is not acceptable)
@@ -349,7 +349,7 @@ Moreover, `preload_eeg_dir` and `preload_fmri_dir` are eliminated for running `m
 
 ### Output of Grad-CAM
 
-The data export to `grad_cam/data` under the `save_dir` directory in both numpy and matlab formats.
+The data will be exported to `grad_cam/data` under the `save_dir` directory in both numpy and matlab formats.
 
 
 
@@ -409,7 +409,7 @@ When `label` shows 1 and `predicted_label` shows 0, the prediction is wrong.
 
 ## 8. Grid search
 
-To perform grid search, prepare and run the script for grid search referring to `main_grid_search_example.py`.
+To perform Grid search, prepare and run the script for Grid search referring to `main_grid_search_example.py`.
 
 Specify an executable file, a save directory name, grid search options, and fixed options as follows.
 
@@ -444,7 +444,7 @@ python3 main_grid_search_sample.py
 
 
 
-In the above example, a summary is output to `./saved_eeg_summary/summary.tx` after execution as follows.
+In the above example, a summary is exported to `./saved_eeg_summary/summary.tx` after execution as follows.
 (The one with the best varidation score will be labeled **best**.)
 
 ```
