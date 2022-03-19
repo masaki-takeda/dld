@@ -216,23 +216,23 @@ class BrainDataset(Dataset):
             self.eeg_datas = eeg_datas
 
         if self.use_fmri:
-            # fMRIのデータディレクトリ設定
+            # Settings of fMRI data directory
             if self.fmri_frame_type == FMRI_FRAME_TYPE_NORMAL:
-                # 通常の場合
+                # For normal
                 fmri_data_dir = "final_fmri_data"
             elif self.fmri_frame_type == FMRI_FRAME_TYPE_AVERAGE:
-                # 3TRの平均を利用する場合
+                # For using the average data of 3TR
                 fmri_data_dir = "final_fmri_data_av"
             else:
-                # 3TR全部を利用する場合
+                # For using the all data of 3TR
                 fmri_data_dir = "final_fmri_data_th"
 
             if not self.use_smooth:
-                # smoothingをかけていない場合に_nsをお尻に付加したディレクトリ名となっている
+                # When non-smoothing data is used, "_nosmooth" is appended to the end of the directory name
                 fmri_data_dir = fmri_data_dir + "_nosmooth"
 
             if self.use_trial_average:
-                # Trial平均利用時
+                # For using trial averaged data
                 fmri_data_dir = fmri_data_dir + "_a{}_r{}_ct{}".format(
                     average_trial_size,
                     average_repeat_size,
@@ -240,9 +240,9 @@ class BrainDataset(Dataset):
             
             self.fmri_data_dir = os.path.join(self.data_dir, fmri_data_dir)
             
-        # データは全て持っておき、indexだけを変えるというやり方を取っている.
+        # The method used is to storage all data and change only the indexes
         
-        # behaviorデータのロード
+        # Loading the behavior data
         behavior_data_path = os.path.join(self.data_dir, "final_behavior_data")
 
         if self.use_trial_average:
