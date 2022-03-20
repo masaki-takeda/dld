@@ -27,7 +27,7 @@ class FMRITest(unittest.TestCase):
         
         behavior = Behavior(src_base, date, subject, run, reject_trials)
 
-        # 通常の場合
+        # For normal
         fmri0 = FMRI(src_base=src_base,
                     behavior=behavior,
                     normalize_per_run=True,
@@ -36,7 +36,7 @@ class FMRITest(unittest.TestCase):
         self.assertEqual(fmri0.data.shape, data_shape)
         self.assertEqual(fmri0.data.dtype, np.float32)
 
-        # 連続3フレームの平均をとる場合
+        # For using the average data of 3TR
         fmri1 = FMRI(src_base=src_base,
                      behavior=behavior,
                      normalize_per_run=True,
