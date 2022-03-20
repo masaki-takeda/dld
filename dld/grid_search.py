@@ -80,7 +80,7 @@ class GridSearch:
 
         self.is_test = False
         if ("test" in self.fixed_options and self.fixed_options["test"] == "true"):
-            # テスト評価時
+            # For test validation
             self.is_test = True
     
         for variable_option in list(variable_options.items()):
@@ -103,7 +103,7 @@ class GridSearch:
         command_lines = []
     
         for suffix_string, variable_option_string in zip(suffix_strings, variable_option_strings):
-            # エラーをerror.txtに残すように
+            # Log errors to error.txt
             command_line = "python3 {} --save_dir={}{}{}{} 3>&1 1>&2 2>&3 | tee -a {}{}/error.txt".format(
                 self.target_file,
                 self.save_dir_prefix,
