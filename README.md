@@ -199,7 +199,7 @@ The arguments implemented in the `model_type` option are as follows.
 | :--------- | ------------------ | ---- |
 | model1     | EEGModel           | 1D Conv model |
 | model2     | EEGModel2          | a model with a larger stride on the first layer of EEGModel |
-| rnn1       | EEGRNNModel        | RNN(LSTM) model |
+| rnn1       | EEGRNNModel        | RNN (LSTM) model |
 | convrnn1   | EEGConvRNNModel    | a model with 1D Conv followed by LSTM applied |
 | filter1    | EEGFilterModel     | a filter model with 2D convolution: the input data is considered as an image of width:250, height:63, and color:5ch |
 | filter2    | EEGFilterModel2    | a filter model with 2D convolution: the input data is considered as an image of width:250, height:5, and color:63ch |
@@ -219,9 +219,9 @@ The arguments implemented in the `model_type` option are as follows.
 
 | model_type | Model name | Description |
 | :--------- | -------- | ---- |
-| combined1     | CombinedModel | a combined model compatible with FMRIModel and EEGModel(`model1`) |
-| combined_filter1     |  CombinedFilterModel   | a filter model compatible with FMRIModel and EEGFilterModel2(`model2`) |
-| combined_tcn1     |  CombinedTCNModel   | a model compatible with FMRIModel and EEGTCNModel(`tcn1`) |
+| combined1     | CombinedModel | a combined model compatible with FMRIModel and EEGModel (`model1`) |
+| combined_filter1     |  CombinedFilterModel   | a filter model compatible with FMRIModel and EEGFilterModel2 (`model2`) |
+| combined_tcn1     |  CombinedTCNModel   | a model compatible with FMRIModel and EEGTCNModel (`tcn1`) |
 
 
 
@@ -237,7 +237,7 @@ See `dld/options.py` for details.
 | Option | Description | Choices | Default |
 | ------------- | ------------- | ------------- | ------------- |
 | data_seed | a random seed used for Cross-Validation separation (basically unchanged) | | 0 |
-| run_seed | to fix a seed (not using a random seed), enter a specific number other than -1. (takes longer) | | -1 |
+| run_seed | to fix a seed (not using a random seed), enter a specific number other than -1 (takes longer) | | -1 |
 | save_dir  | save directory  | | "saved" |
 | classify_type  | classification type/stimulus condition | 0=FACE/PLACE 1=MALE/FEMALE, 2=ARTIFICAL/NATURAL, -1=ALL| -1 |
 | desc  | experiment descriptions | | |
@@ -245,14 +245,14 @@ See `dld/options.py` for details.
 | parallel| whether to train on multiple GPUs |  "true"/"false" | "false" |
 | data_dir | directory of experimental data | |  "./data" |
 | eeg_normalize_type| normalize type of the eeg data　(normal=normal, pre=use the data from the period before fixations, none=no normalization) |  "normal", "pre", "none" | "normal" |
-| fmri_frame_type| frame type of the fmri data (normal=normal, average=use the average data of 3TR, three=use the all data of 3TR) |  "normal", "avarage", "three" | "normal" |
+| fmri_frame_type| frame type of the fmri data (normal=normal, average=use the average data of 3TR, three=use the all data of 3TR) |  "normal", "average", "three" | "normal" |
 | gpu | specify the GPU to use (-1=unspecified, 0=first GPU, 1=second GPU) | | -1 |
 | eeg_frame_type | frame type of the eeg data (normal=normal, filter=5ch filter, ft=FT spectorogram) | "normal", "filter", "ft" | "filter" |
 | smooth | whether to use smoothed fmri data | "true"/"false" | "true" |
 | test_subjects | specify participants to be used for the test | enter the participants' IDs, separated by commas | "TM_191008_01,TM_191009_01" |
 | test | whether to be test or not | "true"/"false" | "false" |
 | fold_size | number of Fold to be used out of 10 Fold |  | 10 |
-| subjects_per_fold | number of participants assined to 1 Fold |  | 4 |
+| subjects_per_fold | number of participants assigned to 1 Fold |  | 4 |
 | patience | number of continuous epochs in Early Stopping |  | 20 |
 | batch_size | batch size | | 10 |
 | lr | learning rate | | 0.001 |
@@ -319,7 +319,7 @@ python3 main_grad_cam_eeg.py --save_dir=./saved_eeg0 --data_dir=/data2/DLD/Data_
 python3 main_grad_cam_fmri.py --save_dir=./saved_fmri0 --data_dir=/data2/DLD/Data_Converted --test_subjects=TM_191008_01,TM_191009_01 --gpu=1 --test=true
 ```
 
-The options for computing Grad-CAM are same as those for **test** except for `run_seed`, `classify_type`, `early_stopping`, `parallel`, `patience`,and `batch_size`. 
+The options for computing Grad-CAM are same as those for **test** except for `run_seed`, `classify_type`, `early_stopping`, `parallel`, `patience`, and `batch_size`. 
 Moreover, `preload_eeg_dir` and `preload_fmri_dir` are eliminated for running `main_grad_cam_combined`, unlike in training.
 
 
@@ -330,16 +330,16 @@ Moreover, `preload_eeg_dir` and `preload_fmri_dir` are eliminated for running `m
 | save_dir  | output directory of model data and results | | "saved" |
 | classify_type  | classification type/stimulus condition  | 0=FACE/PLACE 1=MALE/FEMALE, 2=ARTIFICAL/NATURAL, -1=ALL| -1 |
 | eeg_normalize_type| normalize type of the eeg data　(normal=normal, pre=use the data from the period before fixations, none=no normalization) |  "normal", "pre", "none" | "normal" |
-| fmri_frame_type| frame type of the fmri data (normal=normal, average=use the average data of 3TR, three=use the all data of 3TR) |  "normal", "avarage", "three" | "normal" |
+| fmri_frame_type| frame type of the fmri data (normal=normal, average=use the average data of 3TR, three=use the all data of 3TR) |  "normal", "average", "three" | "normal" |
 | model_type  | model type  | specify the same model_type as Training | specify the same model_type as Training |
-| eeg_frame_type | frame type of the eeg data (normal=normal, filter=5ch filter, ft=FT spectorogram) | "normal", "filter", "ft" | "filter" |
+| eeg_frame_type | frame type of the eeg data (normal=normal, filter=5ch filter, ft=FT spectrogram) | "normal", "filter", "ft" | "filter" |
 | smooth | whether to use smoothed fmri data | "true"/"false" | "true" |
 | gpu | specify the GPU to use (-1=unspecified, 0=first GPU, 1=second GPU) | | -1 |
 | data_seed | a random seed used for Cross-Validation separation (basically unchanged) | | 0 |
 | test | whether to use the test data set (false=use the validation data set) | "true"/"false" | "true" |
 | test_subjects | specify participants to be used for the test | enter the participants' IDs, separated by commas | "TM_191008_01,TM_191009_01" |
 | fold_size | number of Fold to be used out of 10 Fold |  | 10 |
-| subjects_per_fold | number of participants assined to 1 Fold |  | 4 |
+| subjects_per_fold | number of participants assigned to 1 Fold |  | 4 |
 | kernel_size | kernel size (available in STNN and TCN) |  | 3 |
 | level_size | number of num_channels (available in TCN) (-1=automatically calculated) |  | -1 |
 | level_hidden_size | number of channels of num_channels (available in TCN) |  | 63 |
@@ -377,10 +377,10 @@ The data will be exported to `grad_cam/data` under the `save_dir` directory in b
 
 To calculate Guided-Grad-CAM, input `cam_nopool0 * guided_bp0` or `cam_nopool1 * guided_bp1`.
 
-`cam_nopool0`, `cam_nopool1`, `cam0`,and `cam1` are interpolated values to make gradient x activation 250 frames. The gradient x activation are computed based on `flat_active_grad0`, `flat_active_grad1`,and `flat_active_feature`. 
+`cam_nopool0`, `cam_nopool1`, `cam0`, and `cam1` are interpolated values to make gradient x activation 250 frames. The gradient x activation are computed based on `flat_active_grad0`, `flat_active_grad1`, and `flat_active_feature`. 
 
 Although `flat_active_grad0`, `flat_active_grad1`, and `flat_active_feature` have different number of elements at each level, they are flattened into a one-dimensional array to fit the different number of elements into an array.
-For example, the number of levels is 7 when kernel_size=2. The active gradient (i.e., effective gradient) have a one-dimensional array:`(15750), (7875), (3969), (1953), (945), (441), (189)` in which `(63, 250), (63, 125), (63, 63), (63, 31), (63, 15), (63, 7), (63, 3)` are flattened.
+For example, the number of levels is 7 when kernel_size=2. The active gradient (i.e., effective gradient) have a one-dimensional array: `(15750), (7875), (3969), (1953), (945), (441), (189)` in which `(63, 250), (63, 125), (63, 63), (63, 31), (63, 15), (63, 7), (63, 3)` are flattened.
 
 
 
@@ -445,7 +445,7 @@ python3 main_grid_search_sample.py
 
 
 In the above example, a summary is exported to `./saved_eeg_summary/summary.tx` after execution as follows.
-(The one with the best varidation score will be labeled **best**.)
+(The one with the best validation score will be labeled **best**.)
 
 ```
 [ClasslfyType0]
