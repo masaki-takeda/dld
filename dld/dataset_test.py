@@ -241,7 +241,7 @@ class BrainDatasetTest(unittest.TestCase):
     """
 
 
-    # 以下のテストは未更新
+    # The following sections have not been updated
     """
     def test_face_object(self):
         train_dataset = BrainDataset(train=True,
