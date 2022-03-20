@@ -265,25 +265,23 @@ class BrainDataset(Dataset):
 
         train_validation_subjects = np.sort(list(set(unique_subjects) - set(test_subjects)))
 
-        # ここで乱数を0で一旦固定 (被験者の分割はseedによらないようにする為)
+        # To divide participants independent of a random seed, the seed is temporarily fixed at 0 at this point
         np.random.seed(0)
-        # train&validation用の被験者IDをshuffleする
+        # Shuffle subject IDs for training & validation
         np.random.shuffle(train_validation_subjects)
         
-        # 引数のdata_seedで乱数を固定
+        # Fix a random seed with argument "data_seed"
         if data_seed != 0:
-            # 以前のものと互換性を持たせるために、0の時は上の被験者seedでの固定を
-            # 継続して利用するようにしている.
+            # To be compatible with the previous one, the random seed is continuously used when it is 0
             np.random.seed(data_seed)
 
         if debug:
-            # デバッグ時はfoldあたりの被験者数を強制的に1にする.
+            # When debugging, the number of participants per fold is forced to 1
             subjects_per_fold = 1
 
         assert fold < len(train_validation_subjects) // subjects_per_fold
 
-        # train/validationに被験者を分ける.
-        # (被験者をsubjects_per_fold人ずつ分割して分ける)
+        # Divided the participants into training/validation with "subjects_per_fold"
         train_subjects = []
         validation_subjects = None
 
@@ -294,7 +292,7 @@ class BrainDataset(Dataset):
             else:
                 train_subjects += list(fold_subjects)
         
-        # test,train,validationのTrialの場所の[True, False, ....]
+        # True/False of location of Trial for test, training, and validation: [True, False, ....]
         test_subject_set       = set(test_subjects)
         train_subject_set      = set(train_subjects)
         validation_subject_set = set(validation_subjects)
@@ -321,16 +319,15 @@ class BrainDataset(Dataset):
                                                       for_test=(data_type==DATA_TYPE_TEST))
                 
         if data_type == DATA_TYPE_TRAIN:
-            # Trainの場合はシャッフルする
-            # ラベル0, ラベル1対象のindex配列(元データでの位置)シャッフルする
+            # For training, shuffle the index array (position in the original data) for label 0 and 1
             np.random.shuffle(all_indices0)
             np.random.shuffle(all_indices1)
             
-        indices0 = all_indices0 # Class0(Faceなど)のindex配列
-        indices1 = all_indices1 # Class1(Objectなど)のindex配列
+        indices0 = all_indices0 # Index array of Class0 (e.g., Face)
+        indices1 = all_indices1 # Index array of Class1 (e.g., Object)
 
         if data_type == DATA_TYPE_TEST:
-            # TESTデータはpositive,negativeの数を揃えておく.
+            # For test data, the number of positives and negatives should be the same
             min_size = np.min([len(indices0), len(indices1)])
             indices0 = indices0[:min_size]
             indices1 = indices1[:min_size]
