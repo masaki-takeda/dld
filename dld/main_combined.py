@@ -108,7 +108,7 @@ def load_pretrained_models(model, device, classify_type, fold, fix_weights,
     fmri_state = torch.load(fmri_model_path, map_location=device)
     eeg_state  = torch.load(eeg_model_path,  map_location=device)
 
-    # data_parallelで学習していた場合にstate_dictのkey名の'module.'を外す.
+    # Remove 'module.' from the key name in state_dict when training with data_parallel
     fmri_state = fix_state_dict(fmri_state)
     eeg_state = fix_state_dict(fmri_state)
     
@@ -167,7 +167,7 @@ def train_fold(args, classify_type, fold):
                              **kwargs)
 
     if args.run_seed >= 0:
-        # 実行時乱数の固定を行う
+        # Fix random seeds at runtime
         fix_run_seed(args.run_seed + fold)    
 
     fmri_ch_size = train_loader.dataset.fmri_ch_size
