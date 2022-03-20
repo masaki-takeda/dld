@@ -182,10 +182,9 @@ def train_fold(args, classify_type, fold):
                                args.parallel,
                                device)
     
-    # pretrained modelのロード
+    # Loading of pretrained model
     if args.preload_fmri_dir is not None or args.preload_eeg_dir is not None:
-        # preload_fmri_dir か preload_eeg_dir のどちらかがNoneであれば
-        # prelaodはしない
+        # If either preload_fmri_dir or preload_eeg_dir is None, prelaod will not be done
         load_pretrained_models(model, device, classify_type, fold, args.fix_preloads,
                                args.preload_fmri_dir, args.preload_eeg_dir)
 
@@ -195,19 +194,19 @@ def train_fold(args, classify_type, fold):
     lr_eeg = args.lr_eeg
     lr_fmri = args.lr_fmri
     if lr_eeg is None:
-        # 指定がなかった場合はlrを使う
+        # Use lr if not specified
         lr_eeg = lr
     if lr_fmri is None:
-        # 指定がなかった場合はlrを使う
+        # Use lr if not specified
         lr_fmri = lr
         
     weight_decay_eeg = args.weight_decay_eeg
     weight_decay_fmri = args.weight_decay_fmri
     if weight_decay_eeg is None:
-        # 指定がなかった場合はweight_decayを使う
+        # Use weight_decay if not specified
         weight_decay_eeg = weight_decay
     if weight_decay_fmri is None:
-        # 指定がなかった場合はweight_decayを使う
+        # Use weight_decay if not specified
         weight_decay_fmri = weight_decay
         
     optimizer_fc = optim.Adam(model.parameters_fc(),
@@ -238,7 +237,7 @@ def train_fold(args, classify_type, fold):
                                    debug=args.debug)
 
     if args.epochs == 0:
-        # 無学習の場合はモデルの保存だけをしておく
+        # In the case of no training, only save the model
         early_stopping.save(model)
 
     for epoch in range(args.epochs):
@@ -329,7 +328,7 @@ def test_fold(args, classify_type, fold):
                              **kwargs)
     
     if args.run_seed >= 0:
-        # 実行時乱数の固定を行う
+        # Fix random seeds at runtime
         fix_run_seed(args.run_seed + fold)
 
     fmri_ch_size = test_loader.dataset.fmri_ch_size
@@ -344,7 +343,7 @@ def test_fold(args, classify_type, fold):
                                args.parallel,
                                device)
     
-    # ここではpetrained modelのloadは必要ない
+    # No need to load a pretrained model here
     
     model_path  = "{}/model_ct{}_{}.pt".format(args.save_dir, classify_type, fold)
     state = torch.load(model_path, map_location=device)
@@ -389,7 +388,7 @@ def main():
     options.save_args(args)
 
     if args.test == False:
-        # 学習
+        # Train
         if args.classify_type == CLASSIFY_ALL:
             train_ten_folds(args, classify_type=FACE_OBJECT)
             train_ten_folds(args, classify_type=MALE_FEMALE)
