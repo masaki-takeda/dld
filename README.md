@@ -377,7 +377,7 @@ The data will be exported to `grad_cam/data` under the `save_dir` directory in b
 
 To calculate Guided-Grad-CAM, input `cam_nopool0 * guided_bp0` or `cam_nopool1 * guided_bp1`.
 
-`cam_nopool0`, `cam_nopool1`, `cam0`,and `cam1` are complement values to make gradient x activation 250 frames. The gradient x activation are computed based on `flat_active_grad0`, `flat_active_grad1`,and `flat_active_feature`. 
+`cam_nopool0`, `cam_nopool1`, `cam0`,and `cam1` are interpolated values to make gradient x activation 250 frames. The gradient x activation are computed based on `flat_active_grad0`, `flat_active_grad1`,and `flat_active_feature`. 
 
 Although `flat_active_grad0`, `flat_active_grad1`, and `flat_active_feature` have different number of elements at each level, they are flattened into a one-dimensional array to fit the different number of elements into an array.
 For example, the number of levels is 7 when kernel_size=2. The active gradient (i.e., effective gradient) have a one-dimensional array:`(15750), (7875), (3969), (1953), (945), (441), (189)` in which `(63, 250), (63, 125), (63, 63), (63, 31), (63, 15), (63, 7), (63, 3)` are flattened.
