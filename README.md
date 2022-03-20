@@ -247,7 +247,7 @@ See `dld/options.py` for details.
 | eeg_normalize_type| normalize type of the eeg data　(normal=normal, pre=use the data from the period before fixations, none=no normalization) |  "normal", "pre", "none" | "normal" |
 | fmri_frame_type| frame type of the fmri data (normal=normal, average=use the average data of 3TR, three=use the all data of 3TR) |  "normal", "average", "three" | "normal" |
 | gpu | specify the GPU to use (-1=unspecified, 0=first GPU, 1=second GPU) | | -1 |
-| eeg_frame_type | frame type of the eeg data (normal=normal, filter=5ch filter, ft=FT spectorogram) | "normal", "filter", "ft" | "filter" |
+| eeg_frame_type | frame type of the eeg data (normal=normal, filter=5ch filter, ft=FT spectrogram) | "normal", "filter", "ft" | "filter" |
 | smooth | whether to use smoothed fmri data | "true"/"false" | "true" |
 | test_subjects | specify participants to be used for the test | enter the participants' IDs, separated by commas | "TM_191008_01,TM_191009_01" |
 | test | whether to be test or not | "true"/"false" | "false" |
