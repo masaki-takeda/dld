@@ -33,8 +33,8 @@ def train_epoch(model, device, train_loader, optimizer, epoch, logger,
         data  = sample_batched['eeg_data'] # (batch_size, x_dim, seq_length)
         label = sample_batched['label']
         if transpose_input:
-            # RNN系ではx_dimとseqを入れ替え
-            # TODO: forward()の中に入れてリファクタ可能か
+            # Replace x_dim and seq in RNN
+            # TODO: whether to be able to refactor by putting it in forward()
             data = torch.transpose(data, 1, 2) # (batch_size, seq_length, x_dim)
         
         data, label = data.to(device), label.to(device)
@@ -42,8 +42,8 @@ def train_epoch(model, device, train_loader, optimizer, epoch, logger,
         optimizer.zero_grad()
 
         if use_state:
-            # RNN系ではstate利用
-            # TODO: forward()の中に入れてリファクタ可能か
+            # Use state in RNN
+            # TODO: whether to be able to refactor by putting it in forward()
             state = model.init_state(data.shape[0], device)
             output = model(data, state)
         else:
@@ -153,7 +153,7 @@ def train_fold(args, classify_type, fold):
                              **kwargs)
     
     if args.run_seed >= 0:
-        # 実行時乱数の固定を行う
+        # Fix random seeds at runtime
         fix_run_seed(args.run_seed + fold)
     
     model = get_eeg_model(args.model_type, args.parallel,
@@ -179,7 +179,7 @@ def train_fold(args, classify_type, fold):
     use_state = False
 
     if args.epochs == 0:
-        # 無学習の場合はモデルの保存だけをしておく
+        # In the case of no training, only save the model
         early_stopping.save(model)
 
     for epoch in range(args.epochs):
@@ -272,7 +272,7 @@ def test_fold(args, classify_type, fold):
                              **kwargs)
     
     if args.run_seed >= 0:
-        # 実行時乱数の固定を行う
+        # Fix random seeds at runtime
         fix_run_seed(args.run_seed + fold)
 
     model = get_eeg_model(args.model_type, args.parallel,
@@ -325,7 +325,7 @@ def main():
     options.save_args(args)
     
     if args.test == False:
-        # 学習
+        # Train
         if args.classify_type == CLASSIFY_ALL:
             train_ten_folds(args, classify_type=FACE_OBJECT)
             train_ten_folds(args, classify_type=MALE_FEMALE)
