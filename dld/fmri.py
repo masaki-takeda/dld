@@ -97,7 +97,7 @@ class FMRI(object):
             parent_dir_path = os.path.join(dst_base, "final_fmri_data_th")
 
         if not self.smooth:
-            # smoothingをかけていない場合に_nsをお尻に付加する.
+            # When non-smoothing data is used, "_nosmooth" is appended to the end of the directory name
             parent_dir_path = parent_dir_path + "_nosmooth"
             
         if not os.path.exists(parent_dir_path):
