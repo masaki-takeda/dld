@@ -21,29 +21,29 @@ def get_combined_cam(model, dataset, device, index):
     s_data_e = sample['eeg_data'] # (5, 63, 250)
     s_label  = sample['label'] # (1,)
     
-    # バッチの次元を先頭に足す
+    # Add the dimension of the batch to the top of the data
     b_data_f = np.expand_dims(s_data_f, axis=0)
     b_data_e = np.expand_dims(s_data_e, axis=0)
     b_label  = np.expand_dims(s_label, axis=0)
     
-    # テンソルに変換
+    # Convert to tensor
     b_data_f = torch.Tensor(b_data_f)
     b_data_e = torch.Tensor(b_data_e)
     b_label  = torch.Tensor(b_label)
     
-    # デバイスに転送
+    # Transfer to device
     b_data_f = b_data_f.to(device)
     b_data_e = b_data_e.to(device)
     b_label = b_label.to(device)
     
     model.eval()
     model.zero_grad()
-    out = model.forward_grad_cam(b_data_f, b_data_e) # (1,1) logitの値
-    out = torch.sum(out) # (,) スカラーに
+    out = model.forward_grad_cam(b_data_f, b_data_e) # (1,1) logit values
+    out = torch.sum(out) # (,) To scalar
     
     logit = out.cpu().detach().numpy()
     
-    # sigmoidを通して出力確率を出す
+    # Output probability with sigmoid()
     predicted_prob = sigmoid(logit)
     
     if logit > 0:
@@ -52,7 +52,7 @@ def get_combined_cam(model, dataset, device, index):
         predicted_label = 0
     
     if b_label[0][0] == 0:
-        # 教師ラベルがnegativeの場合
+        # When the training label is negative
         out = -out
     
     out.backward()
@@ -68,26 +68,26 @@ def get_combined_cam(model, dataset, device, index):
     f_feature = f_cam_features.data.cpu().numpy()[0] # (32, 6, 7, 6)
     e_feature = e_cam_features.data.cpu().numpy()[0] # (32, 3, 28)
     
-    # Channel毎に重みを求める
+    # Calculate the weighting for each channel
     f_weights = np.mean(f_cam_grad, axis=(1,2,3)) # (32,)
     e_weights = np.sum(e_cam_grad, axis=(1,2)) # (32,)
 
-    # 論文通りのglobal-poolingで求めるgrad-cam
+    # Grad-CAM computed by global-pooling as described in the manuscript
     f_cam_org = np.zeros(f_feature.shape[1:], dtype = np.float32) # (6, 7, 6)
     for i, w in enumerate(f_weights):
         f_cam_org += w * f_feature[i, :, :, :]
     
     e_cam_org = np.zeros(e_feature.shape[1:], dtype=np.float32) # (3,28)
     for i, w in enumerate(e_weights):
-        # 各チャンネル毎の重みをかける
+        # Weighting for each channel
         e_cam_org += w * e_feature[i, :]
         # (3,28)
     
-    # global-poolingを利用しない版のgrad-cam
+    # Grad-CAM computed without global-pooling
     f_cam_nopool = np.sum(f_cam_grad * f_feature, axis=0) # (6, 7, 6)    
     e_cam_nopool = np.sum(e_cam_grad * e_feature, axis=0) # (3, 28)
     
-    # ReLUをかける
+    # Applying ReLU
     f_cam_org = np.maximum(f_cam_org, 0)    
     f_cam_nopool = np.maximum(f_cam_nopool, 0)
     
