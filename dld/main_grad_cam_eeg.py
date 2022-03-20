@@ -52,8 +52,8 @@ def calc_effective_size(kernel_size, level):
 
 def calc_interpolate_base_positions(kernel_size, level, active_positions):
     """
-    levelは0はじまりの値を指定する.
-    (kernel_size=2の場合は、0~6)
+    Level must be specified to a value starting from 0
+    (If kernel_size=2; 0~6)
     """
     dilation_size = 2 ** level
     effective_size = calc_effective_size(kernel_size, level)
@@ -61,7 +61,7 @@ def calc_interpolate_base_positions(kernel_size, level, active_positions):
     half_effective_size = effective_size//2
     interpolate_base_positions = \
         [active_position - half_effective_size for active_position in active_positions]
-    # ここの値はマイナスが出てもかまわない(補完元のキーポイントであるだけなのでマイナス値でもかまわない)
+    # This value can be negative because it is just for the key point of the interpolation source
     return interpolate_base_positions
 
 def interpolate_values(values, kernel_size, level, active_positions):
