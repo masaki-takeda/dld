@@ -3,7 +3,7 @@ from scipy import io
 import os
 
 def save_eeg_ch_data():
-    """ EEGの各チャンネルの名前とPositinをnumpy .npzデータとしてdataディレクトリに保存する """
+    """ Save the name and position of each EEG channel in numpy (.npz) format in the data directory """
     
     file_path = "/Users/miyoshi/Desktop/kut_data/Data/EEG/TM_191008_01/TM_191008_01_01_Segmentation.mat"
     matdata = io.loadmat(file_path)
@@ -13,13 +13,13 @@ def save_eeg_ch_data():
     channel_ys_raw = [chanloc[7][0] for chanloc in chanlocs]
     channel_zs_raw = [chanloc[8][0] for chanloc in chanlocs]
 
-    # ECGを除いた各チャンネルの位置を得る
+    # Get the position of each EEG channel except ECG
     ch_size = len(channel_raw_names)
     ch_positions = np.empty([ch_size-1, 3]) # (63, 3)
     ch_names = []
     ch_indices = []
 
-    ch_index = 0 # ECGを抜いたindex (0~62)
+    ch_index = 0 # Index (0~62) except ECG (31)
     ECG_INDEX = 31
 
     for ch in range(ch_size):
@@ -33,17 +33,17 @@ def save_eeg_ch_data():
             ch_indices.append(ch)
             ch_index += 1
 
-    # ECGを抜いたx,y
+    # x,y except ECG
     xs =  ch_positions[:,0]
     ys =  ch_positions[:,1]
     zs =  ch_positions[:,2]
 
     file_name = "eeg_ch_data"
 
-    # .npzを省いたパス
+    # Path omitting ".npz"
     file_path = os.path.join("experiment_data", file_name)
 
-    # 圧縮して保存
+    # Compress and save the data
     np.savez(file_path,
              names=ch_names,
              positions=ch_positions)
@@ -52,14 +52,14 @@ def save_eeg_ch_data():
 
 
 def load_eeg_ch_data():
-    """ EEGの各チャンネルの名前とPositinをdataディレクトリに置いてある.npzデータからロードする """
+    """ Load the name and positin of each EEG channel from the data (.npz) in the data directory """
     
     file_name = "eeg_ch_data.npz"
     file_path = os.path.join("experiment_data", file_name)
     
     data = np.load(file_path)
 
-    # strに変換しておく
+    # Convert the name data to str
     names = [str(name) for name in data["names"]]
     positions = data["positions"]
     
@@ -79,7 +79,7 @@ def draw_text(draw, x, y, text, color=(0,0,0)):
 
 
 def normalize_signed_weights(weights):
-    """ 正の最大値が1.0 または　負の最小値が-1.0になる様にNormalizeする """
+    """ Normalize so that the maximum value is 1.0 or the minimum value is -1.0 """
     #weights = np.array(weights)
     
     max_plus = max(np.max(weights), 0.0)
@@ -106,7 +106,7 @@ def draw_eeg_ch_weights(ch_names, ch_positions, weights, file_base):
     image_xz = Image.new('RGB', (width, width), (255, 255, 255))
     draw_xz = ImageDraw.Draw(image_xz)
     
-    # x,y,zは(-1~1, -1~1, -0.4~1)の範囲なので、外側に余裕少し持たせた範囲
+    # Since x, y, z are in the range (-1~1, -1~1, -0.4~1), the max range is determined with a little excess
     max_range = 1.2
     
     for name, position, weight in zip(ch_names, ch_positions, normalized_weights):
