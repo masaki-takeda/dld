@@ -14,17 +14,17 @@ class FMRI(object):
                  normalize_per_run=True,
                  frame_type="normal",
                  smooth=True):
-        # 連続3フレームの平均を取るかどうか
+        # Whether to calculate the average data of 3TR
         assert (frame_type == "normal" or frame_type == "average" or frame_type == "three")
         
         self.frame_type = frame_type
         self.smooth = smooth
 
         if smooth:
-            # smoothingをかけた場合
+            # For smoothing
             prefix = "mswuep"
         else:
-            # smoothingをかけていない場合
+            # For non-smoothing
             prefix = "mwuep"
 
         path_format = "{0}/MRI/TM_{1}_{2:0>2}/work_4D/{3}{4:0>2}_4D.nii"
@@ -42,32 +42,32 @@ class FMRI(object):
         # (262, 79, 95, 79) float64
         # (t,z,y,x)
 
-        # ノーマライズ
+        # Normalize
         if normalize_per_run:
             fmri_datas = self.normalize_data(fmri_datas)
 
-        # +4秒後(+2TR)の部分をとってくる.
-        # (正確には+4sec〜+6secの間のフレームを採用する)
+        # Get the data of +4 seconds (+2TR)
+        # (i.e., Adopt frames from +4 sec to +6 sec)
         if frame_type == "normal":
             frame_indices = behavior.get_fmri_tr_indices(offset_tr=2)
             self.data = fmri_datas[frame_indices,:,:,:].astype(np.float32)
-            # (37, 79, 95, 79)等
+            # e.g., (37, 79, 95, 79)
         elif frame_type == "average":
             frame_indices = behavior.get_fmri_successive_tr_indices(
                 offset_tr=2,
                 successive_frames=3)
             frame_indices = np.array(frame_indices, dtype=np.int32)
             org_data = fmri_datas[frame_indices].astype(np.float32)
-            # (37, 3, 79, 95, 79)等
+            # e.g., (37, 3, 79, 95, 79)
             self.data = np.mean(org_data, axis=1)
         else:
-            # frame_type="three"の倍
+            # Double 'frame_type="three"'
             frame_indices = behavior.get_fmri_successive_tr_indices(
                 offset_tr=2,
                 successive_frames=3)
             frame_indices = np.array(frame_indices, dtype=np.int32)
             self.data = fmri_datas[frame_indices].astype(np.float32)
-            # (37, 3, 79, 95, 79)等
+            # e.g., (37, 3, 79, 95, 79)
         
         del nii
         del fmri_datas
@@ -87,13 +87,13 @@ class FMRI(object):
 
     def export(self, dst_base, start_frame_index):
         if self.frame_type == "normal":
-            # 通常の場合
+            # For normal
             parent_dir_path = os.path.join(dst_base, "final_fmri_data")
         elif self.frame_type == "average":
-            # 連続3フレームの平均を取る場合
+            # For using the average data of 3TR
             parent_dir_path = os.path.join(dst_base, "final_fmri_data_av")
         else:
-            # 連続3フレームを使う場合場合
+            # For using the all data of 3TR
             parent_dir_path = os.path.join(dst_base, "final_fmri_data_th")
 
         if not self.smooth:
@@ -106,7 +106,7 @@ class FMRI(object):
         for i in range(len(self.data)):
             frame_index = start_frame_index + i
             
-            # 100個ずつ保存ディレクトリを分ける
+            # Separate save directories for each 100
             dir_name = "frames{}".format(frame_index // 100)
             dir_path = os.path.join(parent_dir_path, dir_name)
 
