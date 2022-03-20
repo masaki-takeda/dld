@@ -323,8 +323,8 @@ class BrainDataset(Dataset):
             np.random.shuffle(all_indices0)
             np.random.shuffle(all_indices1)
             
-        indices0 = all_indices0 # Index array of Class0 (e.g., Face)
-        indices1 = all_indices1 # Index array of Class1 (e.g., Object)
+        indices0 = all_indices0 # Index array of class 0 (e.g., Face)
+        indices1 = all_indices1 # Index array of class 1 (e.g., Object)
 
         if data_type == DATA_TYPE_TEST:
             # For test data, the number of positives and negatives should be the same
@@ -332,25 +332,25 @@ class BrainDataset(Dataset):
             indices0 = indices0[:min_size]
             indices1 = indices1[:min_size]
         
-        # ラベル用のint arrayを用意し, class0の場所には0, class1の場所には1, それ以外は-1を入れる.
+        # Prepare an int array for labels, and input 0 for class 0, 1 for class 1, and -1 for all others
         labels = np.ones([len(categories)], dtype=np.int32) * -1
         labels[indices0] = 0
         labels[indices1] = 1
         
         self.labels = labels
         
-        # 元のデータ上の位置
+        # Locations on original data
         indices = np.hstack([indices0, indices1])
         if data_type == DATA_TYPE_TRAIN:
             np.random.shuffle(indices)
         self.indices = indices
 
         if DEBUG_USE_EEG_MASK:
-            # EEGのマスク例
-            # FT8, FT10以外をマスクする場合
+            # Examples of EEG masks
+            # When masking other than FT8 and FT10
             eeg_non_mask_channel_indices = [CH_FT8, CH_FT10]
             if self.eeg_frame_type == EEG_FRAME_TYPE_FILTER:
-                # Filter利用時
+                # For using filter
                 self.eeg_mask = np.zeros([5, 63, 250], dtype=np.float32)
                 for index in eeg_non_mask_channel_indices:
                     self.eeg_mask[:,index,:] = 1.0
@@ -359,7 +359,7 @@ class BrainDataset(Dataset):
                 for index in eeg_non_mask_channel_indices:
                     self.eeg_mask[:,index,:] = 1.0
             else:
-                # 通常の場合
+                # For normal
                 self.eeg_mask = np.zeros([63, 250], dtype=np.float32)
                 for index in eeg_non_mask_channel_indices:
                     self.eeg_mask[index,:] = 1.0
@@ -367,32 +367,32 @@ class BrainDataset(Dataset):
         
     def get_indices(self, classify_type, categories, sub_categories, trial_mask, for_test):
         if classify_type == FACE_OBJECT:
-            # Faceのindexの配列
+            # Index array of Face
             flags0 = [w0 and w1 for w0, w1 in \
                       zip((categories == CATEGORY_FACE),
                           (trial_mask == True))]
-            # Objectのindexの配列
+            # Index array of Object
             flags1 = [w0 and w1 for w0, w1 in \
                       zip((categories == CATEGORY_OBJECT),
                           (trial_mask == True))]
         elif classify_type == MALE_FEMALE:
-            # FaceかつMaleのindexの配列
+            # Index array of Male Face
             flags0 = [w0 and w1 and w2 for w0, w1, w2 in \
                       zip((categories == CATEGORY_FACE),
                           (sub_categories == SUBCATEGORY_MALE),
                           (trial_mask == True))]
-            # FaceかつFemaleのindexの配列
+            # Index array of Female Face
             flags1 = [w0 and w1 and w2 for w0, w1, w2 in \
                       zip((categories == CATEGORY_FACE),
                           (sub_categories == SUBCATEGORY_FEMALE),
                           (trial_mask == True))]
         elif classify_type == ARTIFICIAL_NATURAL:
-            # ObjectかつArtificialのindexの配列
+            # Index array of Artificial Object
             flags0 = [w0 and w1 and w2 for w0, w1, w2 in \
                       zip((categories == CATEGORY_OBJECT),
                           (sub_categories == SUBCATEGORY_ARTIFICIAL),
                           (trial_mask == True))]
-            # ObjectかつNaturalのindexの配列
+            # Index array of Natural Object
             flags1 = [w0 and w1 and w2 for w0, w1, w2 in \
                       zip((categories == CATEGORY_OBJECT),
                           (sub_categories == SUBCATEGORY_NATURAL),
@@ -400,7 +400,7 @@ class BrainDataset(Dataset):
 
         """
         if for_test and self.use_trial_average:
-            # repeatの最初だけに限定する
+            # Only at the beginning of repeat
             flags_repeat0 = self.average_repeat_indices == 0
             flags0 = flags0 & flags_repeat0
             flags1 = flags1 & flags_repeat0
@@ -434,17 +434,17 @@ class BrainDataset(Dataset):
             eeg_data = self.eeg_datas[real_index]
             # (63, 375) or (5, 63, 375) or (17, 63, 163)
             if self.eeg_frame_type == EEG_FRAME_TYPE_FILTER:
-                # Filter利用時
-                eeg_data = eeg_data[:,:,125:] # -0.5秒〜0秒までを切る場合 # (5, 63, 250)
+                # For using Filter
+                eeg_data = eeg_data[:,:,125:] # For excluding from -0.5 seconds to 0 seconds # (5, 63, 250)
             elif self.eeg_frame_type == EEG_FRAME_TYPE_FT:
-                # FT利用時
-                eeg_data = eeg_data[:,:,38:] # -0.5秒〜0秒までを切る場合 # (5, 63, 125)
+                # For using FT
+                eeg_data = eeg_data[:,:,38:] # For excluding from -0.5 seconds to 0 seconds # (5, 63, 125)
             else:
-                # 通常の場合
-                eeg_data = eeg_data[:,125:] # -0.5秒〜0秒までを切る場合 # (63, 250)
+                # For normal
+                eeg_data = eeg_data[:,125:] # For excluding from -0.5 seconds to 0 seconds # (63, 250)
 
             if DEBUG_USE_EEG_MASK:
-                # マスクをかける場合
+                # When masking
                 eeg_data = eeg_data * self.eeg_mask
 
             sample.update( {
