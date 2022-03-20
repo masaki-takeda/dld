@@ -20,7 +20,7 @@ def export_bar_graph(accuracies, errors, title, save_dir):
     plt.ylabel('Decode accuracy (%)')
     plt.ylim([0.0, 100.0])
     
-    # 補助線
+    # Additional lines
     plt.hlines([50.0], -1, 8, "blue", linestyles='dashed')
     
     plt.xlim([-1, 8])
