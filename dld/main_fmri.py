@@ -131,7 +131,7 @@ def train_fold(args, classify_type, fold):
                                    **kwargs)
     
     if args.run_seed >= 0:
-        # 実行時乱数の固定を行う
+        # Fix random seeds at runtime
         fix_run_seed(args.run_seed + fold)
 
     fmri_ch_size = train_loader.dataset.fmri_ch_size
@@ -153,7 +153,7 @@ def train_fold(args, classify_type, fold):
                                    debug=args.debug)
 
     if args.epochs == 0:
-        # 無学習の場合はモデルの保存だけをしておく
+        # In the case of no training, only save the model.
         early_stopping.save(model)
 
     for epoch in range(args.epochs):
@@ -242,7 +242,7 @@ def test_fold(args, classify_type, fold):
                              **kwargs)
 
     if args.run_seed >= 0:
-        # 実行時乱数の固定を行う
+        # Fix random seeds at runtime
         fix_run_seed(args.run_seed + fold)
 
     fmri_ch_size = test_loader.dataset.fmri_ch_size
@@ -292,7 +292,7 @@ def main():
     options.save_args(args)
     
     if args.test == False:
-        # 学習
+        # Train
         if args.classify_type == CLASSIFY_ALL:
             train_ten_folds(args, classify_type=FACE_OBJECT)
             train_ten_folds(args, classify_type=MALE_FEMALE)
