@@ -12,7 +12,7 @@ class EarlyStopping:
                  classify_type,
                  debug=False):
         self.patience = patience
-        self.ignore_epochs = ignore_epochs # 最初に判断を無視するepoch数
+        self.ignore_epochs = ignore_epochs # Number of epochs to ignore the decision at first
         self.save_dir = save_dir
         self.fold = fold
         
@@ -31,13 +31,13 @@ class EarlyStopping:
                        epoch,
                        model):
         if epoch < self.ignore_epochs and not self.debug:
-            # 最初に無視するepoch期間の間
+            # During the epoch period of first ignoring
             return False
         
         score = validation_accuracy
 
         if self.debug:
-            # デバッグ時は最初の呼び出しで終了する.
+            # When debugging, it terminates on the first call
             self.best_score = score
             self.max_validation_accuracy = validation_accuracy
             self.accompanied_train_accuracy = train_accuracy
@@ -46,18 +46,18 @@ class EarlyStopping:
             return self.early_stop
             
         if self.best_score is None:
-            # 初回呼び出し時
+            # For first call
             self.best_score = score
             self.max_validation_accuracy = validation_accuracy
             self.accompanied_train_accuracy = train_accuracy
             self.save(model)
         elif score < self.best_score:
-            # ベストスコアを下回った場合
+            # If the score is below the best score
             self.counter += 1
             print('EarlyStopping counter: {}/{}'.format(
                 self.counter, self.patience))
             if self.counter >= self.patience:
-                # 規定回数ベストスコアを下回った
+                # The scores have been below the best score more than the specified number of times
                 self.early_stop = True
         else:
             self.best_score = score
