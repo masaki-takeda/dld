@@ -52,7 +52,7 @@ def main():
     
     eeg_data_all = np.load(eeg_data_path)
 
-    eeg_datas = eeg_data_all["eeg_data"] # (3950, 63, 375)等
+    eeg_datas = eeg_data_all["eeg_data"] # e.g., (3950, 63, 375)
 
     if args.debug:
         behavior_data_path = os.path.join(data_dir, "final_behavior_data_debug.npz")
