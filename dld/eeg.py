@@ -7,7 +7,7 @@ except:
 
 from behavior import Behavior
 
-# チャンネル補完用のデータ準備
+# Prepare data for channel interpolation
 ch_names = ['Fp1', 'Fp2', 'F3', 'F4',
             'C3', 'C4', 'P3', 'P4',
             'O1', 'O2', 'F7', 'F8',
@@ -29,12 +29,12 @@ ch_name_index_map = {}
 for i in range(64):
     ch_name = ch_names[i]
     if ch_name == 'ECG':
-        # ECG(31)を除外する
+        # Exclude ECG(31)
         continue
     if i < 31:
         ch_index = i
     else:
-        # ECG以降は-1する
+        # ECG and subsequent channel numbers are set to -1
         ch_index = i-1
     ch_name_index_map[ch_name] = ch_index
 
@@ -42,12 +42,12 @@ for i in range(64):
 def interpolate_noisy_channel(data, noisy_ch_name, neighbor_ch_names):
     noisy_ch = ch_name_index_map[noisy_ch_name]
     if data.ndim == 4:
-        # Filterをつかった場合
+        # For using Filter
         neighbor_data = np.empty([len(neighbor_ch_names), data.shape[1], data.shape[2],
                                   data.shape[3]],
                                  dtype=data.dtype)
     else:
-        # 通常の場合
+        # For normal
         neighbor_data = np.empty([len(neighbor_ch_names), data.shape[1], data.shape[2]],
                              dtype=data.dtype)
 
@@ -63,8 +63,8 @@ def interpolate_noisy_channel(data, noisy_ch_name, neighbor_ch_names):
 
 
 def process_noisy_channel(behavior, data):
-    """ノイズチャンネル補完の例外処理.
-    (中身はハードコードされている)
+    """Exception handling for interpolation of noisy channels
+    (Hard corded)
     """
     if behavior.date == 191009 and behavior.subject == 1 and (5 <= behavior.run <= 8):
         print("interpolate noisy channel: data={} subject={}".format(
@@ -150,13 +150,13 @@ def process_noisy_channel(behavior, data):
 
 
 class EEG(object):
-    """ EEGデータ. (preprocess時に利用) """
+    """ EEG data (for preprocess) """
 
     def __init__(self, src_base, behavior, normalize_type="normal",
                  frame_type="normal"):
         assert (normalize_type == "normal" or normalize_type == "pre" or normalize_type == "none")
         assert (frame_type == "normal" or frame_type == "filter" or frame_type == "ft")
-        # -0.5秒から+1.0秒までのEEGデータ
+        # EEG data: from -0.5 to +1.0 seconds
 
         path_format = "{0}/EEG/Epoched/TM_{1}_{2:0>2}/TM_{1}_{2:0>2}_{3:0>2}_Segmentation.mat"
 
@@ -173,44 +173,44 @@ class EEG(object):
                 eeg_data = np.array(f['EEGfilt'])               # (5, 50, 5, 375, 64)
                 eeg_data = np.transpose(eeg_data, [3, 2, 1, 0]) # (64, 375, 50, 5)
             else:
-                # FTの場合
+                # For FT
                 eeg_data = np.array(f['FT_Specgram'])           # (50, 17, 163, 64)
                 eeg_data = np.transpose(eeg_data, [3, 2, 0, 1]) # (64, 163, 50, 17)
             
         ch_indices = []
         for i in range(64):
-            # ECG(31)を除外する
+            # Exclude ECG(31)
             if i != 31:
                 ch_indices.append(i)
 
-        # ECGを除外
+        # Exclude ECG
         data = eeg_data[ch_indices,:,:,...]
         # (63, 375, 50) or (63, 375, 50, 5)
-        # "..." はそこの次元がある/無いどちらでも良いことをしめしている.
+        # "..." indicates it doesn't matter whether the dimension is inputted or not
 
-        # ノイズチャンネル補完の例外処理 (中身はハードコードされている)
+        # Exception handling for interpolation of noisy channels (Hard corded)
         data = process_noisy_channel(behavior, data)
 
-        # ノーマライズ
+        # Normalize
         if normalize_type != "none":
             data = self.normalize_data(data, normalize_type, frame_type)
 
-        # 有効index部分のみ抜き出す
+        # Extract only the valid index
         data = data[:,:,behavior.trial_indices,...].astype(np.float32)
         # (63, 375, 50) or (63, 375, 50, 5) or (63, 163, 50, 17)
 
         if frame_type == "filter" or frame_type == "ft":
             self.data = np.transpose(data, [2, 3, 0, 1])
-            # (50, 5, 63, 375) or (50, 17, 63, 163)等
+            # e.g., (50, 5, 63, 375) or (50, 17, 63, 163)
         else:
             self.data = np.transpose(data, [2, 0, 1])
-            # (50, 63, 375)等
+            # e.g., (50, 63, 375)
 
         print(self.data.shape)
 
     def normalize_data(self, data, normalize_type, frame_type):
         if normalize_type == "pre":
-            # Fixationの間(125サンプルor38サンプル)のみを使ってnormalizeする
+            # Normalize using only the data between fixations (125 samples or 38 samples)
             if frame_type == "ft":
                 fixattion_data = data[:,:38,:,...]
             else:
@@ -219,22 +219,22 @@ class EEG(object):
             std  = fixattion_data.std(axis=(1,2))
             # (63,5)
         else:
-            # 通常の場合
+            # For normal
             mean = data.mean(axis=(1,2))
             std  = data.std(axis=(1,2))
             # (63,)
 
         if data.ndim == 4:
-            # Filterをつかった場合 or FTの場合
+            # For Filter or For FT
             mean = mean.reshape([-1, 1, 1, data.shape[3]])
             std  = std.reshape([-1, 1, 1, data.shape[3]])
             # (63,1,1,5)
         else:
-            # 通常の場合
+            # For normal
             mean = mean.reshape([-1, 1, 1])
             std  = std.reshape([-1, 1, 1])
             # (63,1,1)
 
-        # 平均, stdでnormalize
+        # Normalize with mean and std
         norm_data = (data - mean) / std
         return norm_data
