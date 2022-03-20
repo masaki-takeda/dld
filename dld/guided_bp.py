@@ -4,8 +4,8 @@ import torch.nn as nn
 
 class ReLUHook():
     """
-    # 1) forward passの出力値を保存
-    # 2) gradientが0以下の時に0にクリッピング
+    # 1) Save the output values of forward pass
+    # 2) Clipping to 0 when the gradient is less than 0
     """
     def __init__(self):
         pass
@@ -21,7 +21,7 @@ class ReLUHook():
         self.forward_output = ten_out
 
     def clear(self):
-        # forward_outputへの参照をクリア
+        # Clear reference to forward_output
         self.forward_output = None
 
     
@@ -51,18 +51,18 @@ class GuidedBackprop():
                 self.apply_relu_hooks(child)
     
     def generate_gradients(self, input_image, label, device):
-        # Forward passを実行
+        # Execute forward pass
         input_image = input_image.detach().clone()
         input_image.requires_grad = True
 
-        # logitsのところまでの出力を得る
+        # Get output up to the point of logits
         model_output = self.model.forward_raw(input_image)
         predicted_prob = torch.sigmoid(model_output)[0][0].cpu().detach().numpy()
         
-        # gradientをゼロ初期化
+        # Zero initialize gradient
         self.model.zero_grad()
         
-        # ターゲットを設定
+        # Set targets
         output = torch.FloatTensor(1, model_output.size()[-1]).to(device).zero_()
         # (1,1)
         
@@ -71,17 +71,17 @@ class GuidedBackprop():
         else:
             output[0][0] = -1
         
-        # Backward passを実行
+        # Execute backward pass
         model_output.backward(gradient=output)
         
-        # torch tensorをnumpy arrayに変換
-        # batchの次元を消すために[0]で取る.
+        # Convert torch tensor to numpy array
+        # Get in [0] to eliminate the dimension of batch
         gradients_array = input_image.grad.cpu().numpy()[0]
         
         return gradients_array, predicted_prob
 
     def clear(self):
-        # Hookのclear
+        # Clear hook
         for handle in self.hook_handles:
             handle.remove()
         self.hook_handles = []
