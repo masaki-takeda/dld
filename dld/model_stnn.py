@@ -52,7 +52,7 @@ class Spatial_Unit(nn.Module):
     def __init__(self, n_inputs, n_channels):
         super(Spatial_Unit, self).__init__()
         
-        # 最後に利用するReLU
+        # ReLU to be used at the end
         self.last_relu = nn.ReLU()
         self.dropout = nn.Dropout(0.1)
         
@@ -131,7 +131,7 @@ class Spatial_Unit(nn.Module):
     def forward(self, x):
         y = self.net(x).squeeze(2)
         y = self.fc(y.view(-1, 16))
-        y = self.last_relu(y) # last_reluを利用する
+        y = self.last_relu(y) # Use "last_relu"
         return y
 
     
@@ -163,7 +163,7 @@ class Temporal_module(nn.Module):
         self.spatial_block = Spatial_Block(n_inputs,
                                            input_length)
                                                 
-        self.last_relu = nn.ReLU() # 最後に利用するReLU
+        self.last_relu = nn.ReLU() # ReLU to be used at the end
         self.init_weights()
         
     def init_weights(self):
@@ -172,7 +172,7 @@ class Temporal_module(nn.Module):
     def forward(self, x):
         y1 = self.temporal_block(x)
         y2 = self.spatial_block(x)
-        return self.last_relu(x + y1 + y2) # last_reluを利用する
+        return self.last_relu(x + y1 + y2) # Use "last_relu"
 
     
 class Temporal_Unit(nn.Module):
@@ -246,7 +246,7 @@ class EEGSTNNModel(nn.Module):
         return torch.sigmoid(h)
 
     def forward_raw(self, x):
-        """ logitsまでのところまでの出力 """
+        """ Outputs up to logits """
         h = self.eeg_net(x)
         return h
 
@@ -292,7 +292,7 @@ class PlainTemporalBlock(nn.Module):
         if n_inputs != n_outputs:
             self.downsample = nn.Conv1d(n_inputs, n_outputs, 1)
         else:
-            # n_inputとn_outputが供に63である場合は、こちら(デフォルト)
+            # When "n_input" and "n_output" are both 63 (default)
             self.downsample = None
         self.last_relu = nn.ReLU()
         self.use_residual = use_residual
@@ -307,15 +307,15 @@ class PlainTemporalBlock(nn.Module):
     def forward(self, x):
         out = self.net(x)
         if self.use_residual:
-            # Residual connectionを使う場合(通常)
+            # When using Residual connection (default)
             if self.downsample is None:
-                # n_inputとn_outputが供に63である場合は、こちら(デフォルト)
+                # When "n_input" and "n_output" are both 63 (default)
                 res = x
             else:
                 res = self.downsample(x)
             return self.last_relu(out + res)
         else:
-            # Residual connectionを使わない場合
+            # When Residual connection is not used
             return self.last_relu(out)
 
     def store_grad(self, grad):
@@ -336,7 +336,7 @@ class PlainTemporalBlock(nn.Module):
 
 
 def calc_coverage_length(kernel_size, dilation_sizes):
-    """ カバーできる範囲を算出する """
+    """ Calculate the coverage """
     coverage_length = 1
     
     for dilation_size in reversed(dilation_sizes):
@@ -346,7 +346,7 @@ def calc_coverage_length(kernel_size, dilation_sizes):
 
 
 def calc_coverage_length_with_level(kernel_size, level_size):
-    """ レベルを指定した時のカバレッジ範囲を算出 """
+    """ Calculate the coverage when the level is specified """
     dilation_sizes = []
     for i in range(level_size):
         dilation_size = 2 ** i
@@ -356,7 +356,7 @@ def calc_coverage_length_with_level(kernel_size, level_size):
     
 
 def calc_required_level(kernel_size):
-    """ カーネルサイズに対して、必要なレベル数を算出 """
+    """ Calculate the number of levels required according to the kernel size """
     max_level = 100
     for i in range(max_level):
         coverage_length = calc_coverage_length_with_level(kernel_size, i)
@@ -408,7 +408,7 @@ class EEGTCNModelSub(nn.Module):
         self.network = nn.Sequential(*layers)
         # (batch, 63, 250)
 
-        # layersを残しておく (forward_grad_cam()用)
+        # Leave layers (for "forward_grad_cam()")
         self.layers = layers
 
     def clear_grad_cam(self):
@@ -417,12 +417,12 @@ class EEGTCNModelSub(nn.Module):
         
     def forward(self, x):
         y1 = self.network(x)
-        # STNNと同じく最後の出力のみを利用する場合
+        # When using only the last output as well as in STNN
         h = self.linear(y1[:,:,-1])
         return h
 
     def forward_for_combined(self, x):
-        """ Combined用に最後のLinearを外した出力を出す """
+        """ Output with the last Linear removed for Combined """
         y1 = self.network(x)
         return y1[:,:,-1]
 
@@ -480,11 +480,11 @@ class EEGTCNModelSub2(nn.Module):
     def forward(self, x):
         y1 = self.network(x)
         
-        # 最終層の全time stepを利用する
+        # Use all time steps of the last layer
         batch_size = y1.shape[0]
         # Flatten
         y1 = y1.view(batch_size, -1)
-        # FC 2層
+        # FC 2 layers
         h = self.linear1(y1)
         h = self.last_relu(h)
         h = self.linear2(h)
