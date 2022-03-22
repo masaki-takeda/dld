@@ -492,7 +492,7 @@ class EEGTCNModelSub2(nn.Module):
 
 
 class EEGTCNModel(nn.Module):
-    """ 最終Levelの最後の時間stepのみを利用するTCN """
+    """ TCN using only the last time step of the last Level """
     def __init__(self,
                  kernel_size=7,
                  level_size=7,
@@ -503,7 +503,7 @@ class EEGTCNModel(nn.Module):
         super(EEGTCNModel, self).__init__()
 
         if level_size < 0:
-            # 最適なレベルを自動で算出
+            # Automatically calculate the optimal level
             level_size = calc_required_level(kernel_size)
         
         num_channels=[level_hidden_size] * level_size
@@ -517,13 +517,13 @@ class EEGTCNModel(nn.Module):
         return torch.sigmoid(h)
     
     def forward_raw(self, x):
-        """ logitsまでのところまでの出力 """
+        """ Outputs up to logits """
         h = self.eeg_net(x)
         return h
 
     def forward_grad_cam(self, x):
         h = self.eeg_net.forward_grad_cam(x)
-        # ここはsigmoidを通さない
+        # Without sigmoid() here
         return h
 
     def get_cam_gradients(self):
@@ -543,7 +543,7 @@ class EEGTCNModel(nn.Module):
 
 
 class EEGTCNModel2(nn.Module):
-    """ 最終Levelの最後の全時間stepを利用するTCN """
+    """ TCN using all the last time steps of the last Level """
     def __init__(self,
                  kernel_size=7,
                  level_size=7,
@@ -554,7 +554,7 @@ class EEGTCNModel2(nn.Module):
         super(EEGTCNModel2, self).__init__()
 
         if level_size < 0:
-            # 最適なレベルを自動で算出
+            # Automatically calculate the optimal level
             level_size = calc_required_level(kernel_size)
 
         num_channels=[level_hidden_size] * level_size
@@ -568,13 +568,13 @@ class EEGTCNModel2(nn.Module):
         return torch.sigmoid(h)
     
     def forward_raw(self, x):
-        """ logitsまでのところまでの出力 """
+        """ Outputs up to logits """
         h = self.eeg_net(x)
         return h
 
 
 class CombinedTCNModel(nn.Module):
-    """ TCNを利用したCombinedモデル """
+    """ Combined model using TCN """
     def __init__(self,
                  fmri_ch_size=1,
                  kernel_size=7,
@@ -586,7 +586,7 @@ class CombinedTCNModel(nn.Module):
                  combined_layer_size=1):
         super(CombinedTCNModel, self).__init__()
         
-        # FMRIModelベース
+        # FMRIModel based
         self.fmri_net = torch.nn.Sequential(
             nn.Conv3d(in_channels=fmri_ch_size,
                       out_channels=8,
@@ -611,15 +611,15 @@ class CombinedTCNModel(nn.Module):
             nn.ReLU(),
             nn.Dropout3d(p=0.5),
             Flatten(),
-            # ここが8064x128となっていて結構大きい
+            # This is quite large (8064x128)
             nn.Linear(in_features=6*7*6*32,
                       out_features=128),
             nn.ReLU(),
         )
 
-        # EEGTCNModelベース
+        # EEGTCNModel based
         if level_size < 0:
-            # 最適なレベルを自動で算出
+            # Automatically calculate the optimal level
             level_size = calc_required_level(kernel_size)
         num_channels=[level_hidden_size] * level_size
         
@@ -654,21 +654,21 @@ class CombinedTCNModel(nn.Module):
         return self.fmri_net.parameters()
 
     def fix_preloads(self):
-        # fMRI側の固定
+        # Fixing on fMRI side
         for i in range(11):
             name = "{}".format(i)
             m = self.fmri_net._modules[name]
             fix_module(m)
-            # Flatten()のところまで固定
+            # Up to Flatten()
 
-        # EEG側の固定
-        # (最後のlinearも固定しているが、forward_for_combined()はそこは通らないので影響がない)
+        # Fixing on EEG side
+        # (Although the last linear is also fixed, "forward_for_combined()" does not pass through there and is not affected)
         fix_module(self.eeg_net)
     
     def forward(self, x_fmri, x_eeg):
         h0 = self.fmri_net(x_fmri)
         # (batch_size, 128)
-        # forward()ではなく、最後のlinearを通さない用にforward_for_combined()を呼び出す.
+        # Call "forward_for_combined()" instead of "forward()" to prevent passing the last linear 
         h1 = self.eeg_net.forward_for_combined(x_eeg)
         # (batch_size, 63)
         h = torch.cat([h0, h1], dim=1)
