@@ -22,11 +22,11 @@ def preprocess_eeg(src_base, dst_base, behaviors, normalize_type, frame_type):
     # (1734, 63, 375) or (1734, 5, 63, 375)
 
     if normalize_type == "normal":
-        output_file_path = os.path.join(dst_base, "final_eeg_data") # npzファイル名
+        output_file_path = os.path.join(dst_base, "final_eeg_data") # File name of npz
     elif normalize_type == "pre":
-        output_file_path = os.path.join(dst_base, "final_eeg_data_pre") # npzファイル名
+        output_file_path = os.path.join(dst_base, "final_eeg_data_pre") # File name of npz
     else:
-        output_file_path = os.path.join(dst_base, "final_eeg_data_none") # npzファイル名
+        output_file_path = os.path.join(dst_base, "final_eeg_data_none") # File name of npz
 
     if frame_type == "filter":
         # フィルタ利用の場合は後ろに"_filter"を付加したファイル名にする
@@ -75,7 +75,7 @@ def save_aggregated_behavior_data(dst_base, behaviors, debug):
             # 各trailの属するsubject id(TM_191008_01など)を保存しておく.
             subjects.append(behavior.subject_id)
 
-    output_file_path = os.path.join(dst_base, "final_behavior_data") # npzファイル名
+    output_file_path = os.path.join(dst_base, "final_behavior_data") # File name of npz
     if debug:
         output_file_path = output_file_path + "_debug"
     np.savez_compressed(output_file_path,
@@ -87,7 +87,7 @@ def save_aggregated_behavior_data(dst_base, behaviors, debug):
 
 
 def collect_behaviors(src_base, debug):
-    # 実験データ
+    # Experimental data
     df = pd.read_csv("./experiment_data/experiments.csv")
 
     column_size = len(df.columns)
@@ -98,7 +98,7 @@ def collect_behaviors(src_base, debug):
 
     for index, row in df.iterrows():
         valid   = int(row['valid']) != 0
-        date    = int(row['date']) # 19008など
+        date    = int(row['date']) # e.g., 19008
         subject = int(row['subject']) # 
         run     = int(row['run'])
         reject_trials = []
