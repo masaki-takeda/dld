@@ -6,16 +6,16 @@ from distutils.util import strtobool
 
 def get_common_parser():
     parser = argparse.ArgumentParser()
-    # dataset乱数seed
+    # Dataset of random seeds
     parser.add_argument("--data_seed", type=int,
                         default=0)
-    # 実行時seed
+    # Run seeds
     parser.add_argument("--run_seed", type=int,
                         default=-1)
-    # 保存ディレクトリ
+    # Save directory
     parser.add_argument("--save_dir", type=str,
                         default="saved")
-    # 分類タイプ
+    # Classify types
     parser.add_argument("--classify_type", type=int,
                         default=-1) # FACE_PLACE=0, MALE_FEMALE=1, ARTIFICAL_NATURL=2, ALL=-1
     parser.add_argument("--desc", type=str,
@@ -34,7 +34,7 @@ def get_common_parser():
                         default=-1)
     parser.add_argument("--eeg_frame_type", type=str,
                         default="filter") # "normal", "filter", "ft"
-    # fMRIにてsmoothingをしたデータを利用するかどうか
+    # Whether to use smoothed fMRI data
     parser.add_argument("--smooth", type=strtobool,
                         default="true")
     parser.add_argument("--test_subjects", type=str,
@@ -52,11 +52,11 @@ def get_common_parser():
     parser.add_argument("--average_repeat_size", type=int,
                         default=0)
     parser.add_argument("--kernel_size", type=int,
-                        default=3) # STNN,TCN用のカーネルサイズ指定
+                        default=3) # The kernel size for STNN and TCN
     parser.add_argument("--level_size", type=int,
-                        default=-1) # TCN用のレベルサイズ
+                        default=-1) # The level size for TCN
     parser.add_argument("--level_hidden_size", type=int,
-                        default=63) # TCNのOutputのch数
+                        default=63) # Numver of the output channels for TCN
     parser.add_argument("--residual", type=strtobool,
                         default="true")
     parser.add_argument("--debug", type=strtobool,
@@ -165,11 +165,11 @@ def get_grad_cam_args():
     parser.add_argument("--average_repeat_size", type=int,
                         default=0)
     parser.add_argument("--kernel_size", type=int,
-                        default=3) # STNN,TCN用のカーネルサイズ指定
+                        default=3) # The kernel size for STNN and TCN
     parser.add_argument("--level_size", type=int,
-                        default=-1) # TCN用のレベルサイズ
+                        default=-1) # The level size for TCN
     parser.add_argument("--level_hidden_size", type=int,
-                        default=63) # TCNのOutputのch数
+                        default=63) # Numver of the output channels for TCN
     parser.add_argument("--residual", type=strtobool,
                         default="true")
     parser.add_argument("--debug", type=strtobool,
