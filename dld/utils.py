@@ -8,7 +8,7 @@ def get_device(gpu):
 
     if use_cuda:
         if gpu >= 0:
-            # GPUを指定している場合
+            # When specifying GPUs
             device_str = "cuda:{}".format(gpu)
         else:
             device_str = "cuda"
@@ -23,8 +23,8 @@ def get_device(gpu):
 
 
 def fix_state_dict(state_dict):
-    """ parallel=Trueで学習されたモデルのstate_dictはkey名画module.***といった名前になっているので
-    module.の部分をカットした物を返す. """
+    """ The state_dict of the model trained with parallel=True has the key name as "module.***"
+        Thus, return those without the "module." part"""
     new_state_dict = OrderedDict()
     for k, v in state_dict.items():
         if k.startswith('module.'):
@@ -36,7 +36,7 @@ def fix_state_dict(state_dict):
 
 
 def save_result(save_dir, classify_type, results, for_test=False):
-    """ 10 Foldの学習/評価結果を保存する """
+    """ Save the results of train/validation in 10 Fold """
     keys = results.keys()
 
     lines = []
@@ -56,7 +56,7 @@ def save_result(save_dir, classify_type, results, for_test=False):
 
     
 def get_test_subject_ids(test_subjects):
-    """ optionのtest_subjects文字列から、実際のtest被験者ID配列にする """
+    """ Make a string of the test_subjects option into an ID array """
     if len(test_subjects) == 0:
         return []
     else:
@@ -68,17 +68,17 @@ def sigmoid(x):
 
 
 def fix_run_seed(seed):
-    """ 乱数を固定 """
-    # Numpyの乱数固定
+    """ Fix random seeds """
+    # Fix random seeds in Numpy
     np.random.seed(seed)
     
-    # Pytorchの乱数固定
+    # Fix random seeds in Pytorch
     torch.manual_seed(seed)
     
     use_cuda = torch.cuda.is_available()
     if use_cuda:
         torch.cuda.manual_seed_all(seed)
         cudnn.deterministic = True
-        # 先にget_device()時にbenchmark = Trueにしていても、ここでFalseにしている
+        # Even if "benchmark = True" during "get_device()", it is False here
         #cudnn.benchmark = False
         
