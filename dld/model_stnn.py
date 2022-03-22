@@ -52,7 +52,7 @@ class Spatial_Unit(nn.Module):
     def __init__(self, n_inputs, n_channels):
         super(Spatial_Unit, self).__init__()
         
-        # ReLU to be used at the end
+        # ReLU for using at the end
         self.last_relu = nn.ReLU()
         self.dropout = nn.Dropout(0.1)
         
@@ -163,7 +163,7 @@ class Temporal_module(nn.Module):
         self.spatial_block = Spatial_Block(n_inputs,
                                            input_length)
                                                 
-        self.last_relu = nn.ReLU() # ReLU to be used at the end
+        self.last_relu = nn.ReLU() # ReLU for using at the end
         self.init_weights()
         
     def init_weights(self):
