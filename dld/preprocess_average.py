@@ -36,14 +36,14 @@ class Subject:
         for i in range(len(extended_indices0) // average_trial_size):
             pos = i * average_trial_size
             averaging_indices0.append(extended_indices0[pos:pos+average_trial_size])
-            # 平均をとる最後の値がどのrepatに入っているか
+            # Which repat the last value to take the average is in
             averaging_repeat_index = repeat_indices0[pos+average_trial_size-1]
             averaging_repeat_indices0.append(averaging_repeat_index)
 
         for i in range(len(extended_indices1) // average_trial_size):
             pos = i * average_trial_size
             averaging_indices1.append(extended_indices1[pos:pos+average_trial_size])
-            # 平均をとる最後の値がどのrepatに入っているか
+            # Which repat the last value to take the average is in
             averaging_repeat_index = repeat_indices1[pos+average_trial_size-1]
             averaging_repeat_indices1.append(averaging_repeat_index)
             
@@ -127,34 +127,34 @@ def preprocess_average_behavior(behavior_data,
     subject_objs = []
     
     for subject_id in subject_ids:
-        # 被験者1名ずつ処理
+        # Process one participant at a time
         if classify_type == FACE_OBJECT:
-            # Faceのindexの配列
+            # Face index array
             indices0 = np.where([w0 and w1 for w0, w1 in \
                                  zip((categories == CATEGORY_FACE),
                                      (subjects == subject_id))])[0]
-            # Objectのindexの配列
+            # Object index array
             indices1 = np.where([w0 and w1 for w0, w1 in \
                                  zip((categories == CATEGORY_OBJECT),
                                      (subjects == subject_id))])[0]
         elif classify_type == MALE_FEMALE:
-            # FaceかつMaleのindexの配列
+            # Male-Face index array
             indices0 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
                                  zip((categories == CATEGORY_FACE),
                                      (sub_categories == SUBCATEGORY_MALE),
                                      (subjects == subject_id))])[0]
-            # FaceかつFemaleのindexの配列
+            # Female-Face index array
             indices1 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
                                  zip((categories == CATEGORY_FACE),
                                      (sub_categories == SUBCATEGORY_FEMALE),
                                      (subjects == subject_id))])[0]
         else:
-            # ObjectかつArtificialのindexの配列
+            # Artificial-Object index array
             indices0 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
                                  zip((categories == CATEGORY_OBJECT),
                                      (sub_categories == SUBCATEGORY_ARTIFICIAL),
                                      (subjects == subject_id))])[0]
-            # ObjectかつNaturalのindexの配列
+            # Natural-Object index array
             indices1 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
                                  zip((categories == CATEGORY_OBJECT),
                                      (sub_categories == SUBCATEGORY_NATURAL),
@@ -211,10 +211,10 @@ def preprocess_average_eeg(dst_base,
 
     eeg_suffix = ""
     if eeg_frame_type == "filter":
-        # EEGにてfilterを利用する場合はファイル名に"_filter"がつく
+        # Append "_filter" to the end of the file name when using filters in EEG
         eeg_suffix = "_filter"
     elif eeg_frame_type == "ft":
-        # EEGにてFT spectrogramを利用する場合はファイル名に"_ft"がつく
+        # Append "_ft" to the end of the file name when using FT-spectrograms in EEG
         eeg_suffix = "_ft"
 
     if eeg_normalize_type == "normal":
@@ -254,7 +254,7 @@ def save_fmri_frame_data(frame_data,
                          output_fmri_data_dir,
                          index):
 
-    # 100個ずつ保存ディレクトリを分ける
+    # Separate storage directories for each 100
     dir_name = "frames{}".format(index // 100)
     dir_path = os.path.join(output_fmri_data_dir, dir_name)
 
@@ -276,17 +276,17 @@ def preprocess_average_fmri(dst_base,
     print("processing fmri: classify_type={}".format(averaging_behavior.classify_type))
 
     if fmri_frame_type == "normal":
-        # 通常の場合
+        # For normal
         fmri_data_dir = "final_fmri_data"
     elif fmri_frame_type == "average":
-        # 3TRの平均を利用する場合
+        # For using the average data of 3TR
         fmri_data_dir = "final_fmri_data_av"
     else:
-        # 3TR全部んを利用する場合
+        # For using the all data of 3TR
         fmri_data_dir = "final_fmri_data_th"
 
     if not smooth:
-        # smoothingをかけていない場合に_nsをお尻に付加したディレクトリ名となっている
+        # Add "_nosmooth" to the end of the directory name when using non-smoothing data
         fmri_data_dir = fmri_data_dir + "_nosmooth"
 
     input_fmri_data_dir = os.path.join(dst_base, fmri_data_dir)
@@ -299,7 +299,7 @@ def preprocess_average_fmri(dst_base,
         os.mkdir(output_fmri_data_dir)
     
     averaging_indices = averaging_behavior.indices
-    # (1053, 3) など
+    # e.g., (1053, 3)
 
     output_frame_index = 0
     
@@ -328,7 +328,7 @@ def save_averaging_behavior_data(dst_base,
         averaging_behavior.classify_type)
 
     
-    output_file_path = os.path.join(dst_base, file_name) # npzファイル名
+    output_file_path = os.path.join(dst_base, file_name) # File name of npz
     if debug:
         output_file_path = output_file_path + "_debug"
     
@@ -363,7 +363,7 @@ def preprocess_average():
                         default="false")
     args = parser.parse_args()
 
-    # データの読み込み/書き出し場所
+    # Data inport/export location
     dst_base = args.dst_base
 
     if args.debug:
@@ -373,7 +373,7 @@ def preprocess_average():
 
     behavior_data = np.load(behavior_data_path)
 
-    # trial averageで利用する乱数用に乱数種を固定する
+    # Fix the random seed for using in trial average
     np.random.seed(0)
 
     for ct in [FACE_OBJECT, MALE_FEMALE, ARTIFICIAL_NATURAL]:
@@ -399,7 +399,7 @@ def preprocess_average():
                                     fmri_frame_type=args.fmri_frame_type,
                                     smooth=args.smooth)
         
-        # 拡張Behaviorの保存
+        # Save averaging behavior data
         save_averaging_behavior_data(dst_base,
                                      averaging_behavior,
                                      average_trial_size=args.average_trial_size,
