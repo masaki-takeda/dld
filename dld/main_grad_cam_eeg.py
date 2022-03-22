@@ -74,7 +74,7 @@ def interpolate_values(values, kernel_size, level, active_positions):
     assert type(values) == list
     assert type(x_base) == list
     
-    # frame0とframe249に0を挿入する場合
+    # When inserting 0 in frame 0 and frame 249
     if x_base[0] > 0:
         x_base = [0] + x_base
         values = [0] + values
@@ -82,7 +82,7 @@ def interpolate_values(values, kernel_size, level, active_positions):
         x_base = x_base + [249]
         values = values + [0]
     
-    # frame0とframe249に最初フレーム,最後frameの値を挿入する場合
+    # When inserting values of first frame in frame 0 and that of last frame in frame 249
     """
     if x_base[0] > 0:
         x_base = [0] + x_base
@@ -121,7 +121,7 @@ def get_eeg_grad_cam(model, data, label, kernel_size, level_size):
     raw_grads     = model.get_cam_gradients() # [(1, 63, 250), ... x7]
     raw_features  = model.get_cam_features()  # [(1, 63, 250), ... x7]
     
-    # batchの1を取り除く. np.ndarrayに.
+    # Remove 1 in batch  # To np.ndarray
     raw_grads    = [raw_grad[0].cpu().numpy()             for raw_grad    in raw_grads]
     raw_features = [raw_feature[0].cpu().detach().numpy() for raw_feature in raw_features]
 
@@ -142,22 +142,22 @@ def get_eeg_grad_cam(model, data, label, kernel_size, level_size):
     for i,active_positions in enumerate(all_active_positions):
         active_grads    = raw_grads[i][:,active_positions]
         active_features = raw_features[i][:,active_positions]
-        # (63, 250)とか、(63, 3)とか
+        # e.g., (63, 250), (63, 3)...
 
         # gradientのglobal pooling
         active_grads_pool = np.mean(active_grads, axis=1).reshape(63,1)
         # (63, 1)
 
-        # grad-cam (grad x feature)の算出
-        # ch方向に加算してrelu
-        # (global pooling無し)
+        # Compute Grad-CAM (grad x feature)
+        # Sum up in the channel direction and conduct ReLU
+        # (without global pooling)
         grad_cam_nopool = np.maximum(
             np.sum(active_features * active_grads,      axis=0), 0)
-        # (global pooling有り)
+        # (with global pooling)
         grad_cam_org    = np.maximum(
             np.sum(active_features * active_grads_pool, axis=0), 0)
 
-        # 250frameに引きのばす
+        # Expand to 250 frames
         grad_cam_nopool_interpolated = interpolate_values(
             grad_cam_nopool, kernel_size, i, active_positions)
         grad_cam_org_interpolated    = interpolate_values(
@@ -167,8 +167,8 @@ def get_eeg_grad_cam(model, data, label, kernel_size, level_size):
         all_grad_cam_org_interpolated.append(grad_cam_org_interpolated)
         
         all_flat_active_grads.append(active_grads.ravel())
-        # (63, 250)とか、(63, 3)とかを1次元のflatにする
-        # (save時にndarray化するときのエラーを回避する為)
+        # Make the followings into 1-dimentional Flat: e.g., (63, 250), (63, 3)...
+        # (To avoid errors when converting to ndarray at saving)
         all_flat_active_features.append(active_features.ravel())
         
     return raw_grads, raw_features, \
@@ -184,13 +184,13 @@ def get_eeg_cam(model, dataset, device, index, kernel_size, level_size):
     s_label  = sample['label'] # (1,)
     label = int(s_label[0])
     
-    # バッチの次元を先頭に足す
+    # Add the dimension of the batch to the top of the data
     b_data_e = np.expand_dims(s_data_e, axis=0)
     
-    # テンソルに変換
+    # Convert to tensor
     b_data_e = torch.Tensor(b_data_e)
 
-    # デバイスに転送
+    # Transfer to the device
     b_data_e = b_data_e.to(device)
     
     gbp = GuidedBackprop(model)
@@ -205,10 +205,10 @@ def get_eeg_cam(model, dataset, device, index, kernel_size, level_size):
     guided_bp1, predicted_prob1 = gbp.generate_gradients(b_data_e, 1, device)
     # (63, 250)
 
-    # GuidedBPのメモリ解放
+    # Free the memory of GuidedBP
     gbp.clear()
     
-    # grad-cam算出
+    # Compute Grad-CAM
     out0 = get_eeg_grad_cam(model, b_data_e, 0, kernel_size, level_size)
     raw_grads0, \
         raw_features0, \
@@ -287,8 +287,7 @@ def process_grad_cam_eeg_sub(args,
     
     data_size = len(dataset)
 
-    # cam_feature, active_cam_feature は、labe=0,1のどちらでも同じ値なので
-    # 片方だけを保存する.
+    # Since "cam_feature" and "active_cam_feature" are the same for both labe=0 and 1, save only one of them each
     guided_bps0 = []
     guided_bps1 = []
     raw_grads0 = []
@@ -352,7 +351,7 @@ def process_grad_cam_eeg_sub(args,
     np_output_file_path = f"{output_dir}/cam_eeg_ct{classify_type}_{fold}"
     mat_output_file_path = f"{np_output_file_path}.mat"
     
-    # numpy形式で保存
+    # Save in numpy format
     save_data = {
         'guided_bp0' : guided_bps0,
         'guided_bp1' : guided_bps1,
