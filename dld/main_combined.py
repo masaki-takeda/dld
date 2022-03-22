@@ -108,7 +108,7 @@ def load_pretrained_models(model, device, classify_type, fold, fix_weights,
     fmri_state = torch.load(fmri_model_path, map_location=device)
     eeg_state  = torch.load(eeg_model_path,  map_location=device)
 
-    # Remove 'module.' from the key name in state_dict when training with data_parallel
+    # Remove "module." from the key name in state_dict when training with data_parallel
     fmri_state = fix_state_dict(fmri_state)
     eeg_state = fix_state_dict(fmri_state)
     
