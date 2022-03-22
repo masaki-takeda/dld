@@ -42,7 +42,7 @@ class Behavior(object):
     
     def __init__(self, src_base, date, subject, run, reject_trials):
         #suffix = ""
-        #version excluding trials with reaction times longer than 2 secs
+        # Version excluding trials with reaction times longer than 2 secs
         suffix = "_2sdelete"
         
         mat_path = "{0}/PsychToolbox/TM_{1}_{2:0>2}/TM_{1}_{2:0>2}_{3:0>2}{4}.mat".format(
@@ -55,11 +55,11 @@ class Behavior(object):
         self.subject = subject # 1, 2
         self.run     = run
 
-        # for MATLAB ver7 format
+        # For MATLAB ver7 format
         #mat_all_data = io.loadmat(mat_path)
         #head_time = mat_all_data['time']['TR'][0][0][0][0]
 
-        # for MATLAB ver7.3 format
+        # For MATLAB ver7.3 format
         with h5py.File(mat_path,'r') as f:
             head_time = f['time']['TR'][0][0]
         
@@ -88,9 +88,9 @@ class Behavior(object):
             trial_id = int(csv_row[5])
             
             if (category != 0) and correct and (trial_id not in reject_trials):
-                # excluding Fixation trial
-                # excluding Incorrect trial
-                # excluding Reject trial
+                # Excluding Fixation trial
+                # Excluding Incorrect trial
+                # Excluding Reject trial
                 trial = Trial(category, identity, angle, time, trial_id)
                 trials.append(trial)
         
