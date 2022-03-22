@@ -211,7 +211,7 @@ class BrainDataset(Dataset):
             eeg_data_path = eeg_data_path + ".npz"
             
             eeg_data_all = np.load(eeg_data_path)
-            eeg_datas = eeg_data_all["eeg_data"] # (3940, 63, 375) or (3940, 5, 63, 375)等
+            eeg_datas = eeg_data_all["eeg_data"] # e.g., (3940, 63, 375) or (3940, 5, 63, 375)...
             
             self.eeg_datas = eeg_datas
 
@@ -265,7 +265,7 @@ class BrainDataset(Dataset):
 
         train_validation_subjects = np.sort(list(set(unique_subjects) - set(test_subjects)))
 
-        # To divide participants independent of a random seed, the seed is temporarily fixed at 0 at this point
+        # To divide subjects independent of a random seed, the seed is temporarily fixed at 0 at this point
         np.random.seed(0)
         # Shuffle subject IDs for training & validation
         np.random.shuffle(train_validation_subjects)
