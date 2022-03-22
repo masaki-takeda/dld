@@ -468,7 +468,7 @@ class EEGFtModel(nn.Module):
 
 class FMRIModel(nn.Module):
     """
-    With BatchNorm3d (旧FMRIMiddleModel2)
+    With BatchNorm3d (Former: FMRIMiddleModel2)
     """
     def __init__(self, fmri_ch_size=1):
         super(FMRIModel, self).__init__()
@@ -516,7 +516,7 @@ class FMRIModel(nn.Module):
     def forward_grad_cam(self, x):
         self.grad_extractor = GradExtractor()
         h = self.grad_extractor.forward(self.fmri_net, x, '8')
-        # [8]=Conv3dの後のRelu()
+        # Relu() after [8]=Conv3d
         return h # Without sigmoid() here
 
     def get_cam_gradients(self):
