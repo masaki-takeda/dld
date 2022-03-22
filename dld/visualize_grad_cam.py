@@ -36,7 +36,7 @@ def export_fcam(fcam, title, file_path):
 
 
 def export_ecam(ecam, title, file_path):
-    # x軸
+    # x-axis
     xs = (np.arange(0, 28) + 0.5) * (1000/28)
     
     plt.title(title)
@@ -103,7 +103,7 @@ def export_grad_cam_eeg(classify_type):
     data = np.load("./grad_cam_results/grad_cam_data_eeg_ct{}_0.npz".format(classify_type))
     #cam = data['cam'] # (1807, 3, 28)
     cam_nopool = data['cam_nopool'] # (1807, 3, 28)
-    cam_nopool = np.mean(cam_nopool, axis=1) # (1807, 28) 3chの平均を取る
+    cam_nopool = np.mean(cam_nopool, axis=1) # (1807, 28) Take the average of the 3 channels
     
     labels = data['label'] # (1807,)
     #predicted_labels = data['predicted_label']
@@ -147,7 +147,7 @@ def export_grad_cam_combined(classify_type):
     data = np.load("./grad_cam_results/grad_cam_data_combined_ct{}_0.npz".format(classify_type))
     f_cam_nopool = data['f_cam_nopool']
     e_cam_nopool = data['e_cam_nopool'] # (1807, 3, 28)
-    e_cam_nopool = np.mean(e_cam_nopool, axis=1) # (1807, 28) 3chの平均を取る
+    e_cam_nopool = np.mean(e_cam_nopool, axis=1) # (1807, 28) Take the average of the 3 channels
     
     labels = data['label'] # (*,)
 
