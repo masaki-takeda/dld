@@ -197,7 +197,7 @@ class EEG(object):
 
         # Extract only the valid index
         data = data[:,:,behavior.trial_indices,...].astype(np.float32)
-        # (63, 375, 50) or (63, 375, 50, 5) or (63, 163, 50, 17)
+        # (63, 375, 50), (63, 375, 50, 5), or (63, 163, 50, 17)
 
         if frame_type == "filter" or frame_type == "ft":
             self.data = np.transpose(data, [2, 3, 0, 1])
