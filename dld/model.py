@@ -34,7 +34,7 @@ class EEGModel(nn.Module):
             nn.Conv1d(in_channels=32,
                       out_channels=32,
                       kernel_size=3,
-                      stride=1, # ここのstrideを2にするとダメになる
+                      stride=1, # If stride=2, it will not work correctly
                       padding=1), # (10,32,28) #(10, 32, 42)
             nn.ReLU(),
             Flatten(),
@@ -56,7 +56,7 @@ class EEGModel(nn.Module):
 
         if cam_level == 0:
             e_layer = '7'
-            # [7]=Conv1dの後のRelu()
+            # Relu() after [7]=Conv1d
         elif cam_level == 1:
             e_layer = '5'
         elif cam_level == 2:
@@ -78,7 +78,7 @@ class EEGModel(nn.Module):
 
 class EEGFilterModel(nn.Module):
     """
-    EEG Filter Model (仮)
+    EEG Filter Model (tentative)
     横:250, 縦:63, 色:5chの画像と同様なものとして2次元の畳み込みを行ったモデル.
     (パラメータなどは現在適当な値)
     EEGの63chは並び順空間的な位置情報を表していないので、これが適切かどうかは検討する必要がある.
