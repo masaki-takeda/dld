@@ -517,7 +517,7 @@ class FMRIModel(nn.Module):
         self.grad_extractor = GradExtractor()
         h = self.grad_extractor.forward(self.fmri_net, x, '8')
         # [8]=Conv3dの後のRelu()
-        return h # ここはsigmoidを通さない
+        return h # Without sigmoid() here
 
     def get_cam_gradients(self):
         return self.grad_extractor.grad
@@ -529,7 +529,7 @@ class FMRIModel(nn.Module):
 class CombinedModel(nn.Module):
     def __init__(self, fmri_ch_size=1):
         super(CombinedModel, self).__init__()
-        # FMRIModelベース
+        # FMRIModel based
         self.fmri_net = torch.nn.Sequential(
             nn.Conv3d(in_channels=fmri_ch_size,
                       out_channels=8,
@@ -560,7 +560,7 @@ class CombinedModel(nn.Module):
             nn.ReLU(),
         )
 
-        # EEGModelベース
+        # EEGModel based
         self.eeg_net = torch.nn.Sequential(
             nn.Conv1d(in_channels=63,
                       out_channels=10,
@@ -605,13 +605,13 @@ class CombinedModel(nn.Module):
             name = "{}".format(i)
             m = self.fmri_net._modules[name]
             fix_module(m)
-            # Flatten()のところまで
+            # Up to Flatten()
 
         for i in range(9):
             name = "{}".format(i)
             m = self.eeg_net._modules[name]
             fix_module(m)
-            # Flatten()のところまで
+            # Up to Flatten()
     
     def forward(self, x_fmri, x_eeg):
         h0 = self.fmri_net(x_fmri)
@@ -635,12 +635,12 @@ class CombinedModel(nn.Module):
             e_layer = '3'
         
         h0 = self.fmri_grad_extractor.forward(self.fmri_net, x_fmri, f_layer)
-        # [8]=BatchNorm3dの後のRelu()
+        # Relu() after [8]=BatchNorm3d
         h1 = self.eeg_grad_extractor.forward(self.eeg_net, x_eeg, e_layer)
-        # [7]=Conv1dの後のRelu()
+        # Relu() after [7]=Conv1d
         h = torch.cat([h0, h1], dim=1)
         h = self.output(h)
-        # ここはsigmoidを通さない
+        # Without sigmoid() here
         return h
 
     def get_cam_gradients(self):
@@ -653,7 +653,7 @@ class CombinedModel(nn.Module):
 class CombinedFilterModel(nn.Module):
     def __init__(self, fmri_ch_size=1):
         super(CombinedFilterModel, self).__init__()
-        # FMRIModelベース
+        # FMRIModel based
         self.fmri_net = torch.nn.Sequential(
             nn.Conv3d(in_channels=fmri_ch_size,
                       out_channels=8,
@@ -684,7 +684,7 @@ class CombinedFilterModel(nn.Module):
             nn.ReLU(),
         )
 
-        # EEGFilterModel2ベース
+        # EEGFilterModel2 based
         self.eeg_net = torch.nn.Sequential(
             nn.Conv2d(in_channels=63,
                       out_channels=10,
@@ -729,21 +729,21 @@ class CombinedFilterModel(nn.Module):
             name = "{}".format(i)
             m = self.fmri_net._modules[name]
             fix_module(m)
-            # Flatten()のところまで
+            # Up to Flatten()
 
         for i in range(9):
             name = "{}".format(i)
             m = self.eeg_net._modules[name]
             fix_module(m)
-            # Flatten()のところまで
+            # Up to Flatten()
     
     def forward(self, x_fmri, x_eeg):
         h0 = self.fmri_net(x_fmri)
         
         # x_eeg=(10, 5, 63, 250)
-        # 5ch, 63chの場所を入れ替える
+        # Swap the locations of 5ch and 63ch
         x_eeg = torch.transpose(x_eeg, 1, 2)
-        # x_eeg=(10, 63, 5, 250) -> 幅250, 高さ5, 63ch, batch_size=10の画像と同じ扱い.
+        # x_eeg=(10, 63, 5, 250) -> the input data is considered as an image of width:250, height:5, and 63ch, batch_size=10
         h1 = self.eeg_net(x_eeg)
         
         h = torch.cat([h0, h1], dim=1)
@@ -767,12 +767,12 @@ class CombinedFilterModel(nn.Module):
         x_eeg = torch.transpose(x_eeg, 1, 2)
         
         h0 = self.fmri_grad_extractor.forward(self.fmri_net, x_fmri, f_layer)
-        # [8]=BatchNorm3dの後のRelu()
+        # Relu() after [8]=BatchNorm3d
         h1 = self.eeg_grad_extractor.forward(self.eeg_net, x_eeg, e_layer)
-        # [7]=Conv1dの後のRelu()
+        # Relu() after [7]=Conv1d
         h = torch.cat([h0, h1], dim=1)
         h = self.output(h)
-        # ここはsigmoidを通さない
+        # Without sigmoid() here
         return h
 
     def get_cam_gradients(self):
