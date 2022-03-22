@@ -2,7 +2,7 @@ import torch
 
 class GradExtractor(object):
     """
-    GradCamの為のgradient保存用.
+    For saving gradient for Grad-CAM
     """
     def __init__(self):
         pass
@@ -11,7 +11,7 @@ class GradExtractor(object):
         self.grad = grad
 
     def forward(self, module, x, target_name):
-        # Noneの時だけinputに対して取る
+        # Only when None
         if target_name == None:
             if x.requires_grad == False:
                 x.requires_grad = True
@@ -33,6 +33,6 @@ class Flatten(torch.nn.Module):
 
 
 def fix_module(module):
-    """ module内のparameterのrequires_gradをすべてFalseにする """
+    """ Set all "requires_grad" of parameters in the module to False """
     for parameter in module.parameters():
         parameter.requires_grad = False
