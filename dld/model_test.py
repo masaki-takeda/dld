@@ -34,7 +34,7 @@ class EEGRNNModelTest(unittest.TestCase):
         x_dim = 63
         seq_length = 250
 
-        x = torch.ones(batch_size, seq_length, x_dim) # RNNはここがseq, x_dim逆になっている
+        x = torch.ones(batch_size, seq_length, x_dim) # In RNN, seq and x_dim are reversed
         device = "cpu"
         state = model.init_state(batch_size, device)
         output = model(x, state)
@@ -53,7 +53,7 @@ class EEGConvRNNModelTest(unittest.TestCase):
         x_dim = 63
         seq_length = 250
 
-        x = torch.ones(batch_size, x_dim, seq_length) # Conv系のinput
+        x = torch.ones(batch_size, x_dim, seq_length) # Inputs of Conv
         device = "cpu"
         state = model.init_state(batch_size, device)
         output = model(x, state)
