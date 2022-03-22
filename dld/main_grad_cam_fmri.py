@@ -45,17 +45,17 @@ def get_fmri_grad_cam(model, data, label):
     f_cam_grad = cam_grads.cpu().numpy()[0] # (32, 6, 7, 6)
     f_feature  = cam_features.data.cpu().numpy()[0] # (32, 6, 7, 6)
 
-    # 勾配の6x7x6 voxelの平均を取る
+    # Take the average of the 6x7x6 voxel of the gradient
     f_weights = np.mean(f_cam_grad, axis=(1,2,3)) # (32,)
 
-    # 論文通りのglobal-poolingで求めるgrad-cam
+    # Grad-CAM calculated with global-pooling as described in the manuscript
     f_cam_org = np.zeros(f_feature.shape[1:], dtype = np.float32) # (6, 7, 6)
     for i, w in enumerate(f_weights):
-        # 32個の(6,7,6) voxelの重み付け和を出す
+        # Find the weighted sum of 32 (6,7,6) voxels
         f_cam_org += w * f_feature[i, :, :, :]
         
-    # global-poolingを利用しない版のgrad-cam
-    # (32,6,7,6)と(32,7,6,7)の要素積の32chの和
+    # Grad-CAM calculated without global-pooling
+    # Sum of 32 channels of element-wise products of (32,6,7,6) and (32,7,6,7)
     f_cam_nopool = np.sum(f_cam_grad * f_feature, axis=0) # (6, 7, 6)
 
     f_cam_org    = np.maximum(f_cam_org,    0)    
@@ -81,19 +81,19 @@ def get_fmri_cam(model, dataset, device, index):
     f_cam_org1, f_cam_nopool1, _, _                            = get_fmri_grad_cam(model, b_data_f, 1)
     # (6,7,6)
 
-    # 元のVoxelサイズにresizeする
+    # Resize to original voxel size
     zoom_rate = np.array((79, 95, 79)) / np.array((6,7,6))
     
     f_cam_nopool0_zoom = scipy.ndimage.zoom(f_cam_nopool0, zoom_rate)
     f_cam_nopool1_zoom = scipy.ndimage.zoom(f_cam_nopool1, zoom_rate)
     # (79, 95, 79)
 
-    # Guided-BPの計算
+    # Calculate Guided-BP
     gbp = GuidedBackprop(model)
     gbp_grad0, _ = gbp.generate_gradients(b_data_f, 0, device)
     gbp_grad1, _ = gbp.generate_gradients(b_data_f, 1, device)
 
-    # GuidedBPのメモリ解放
+    # Free the memory of GuidedBP
     gbp.clear()
 
     gbp_grad0 = gbp_grad0[0]
@@ -192,7 +192,7 @@ def process_grad_cam_fmri_sub(args,
     np_output_file_path = f"{output_dir}/cam_fmri_ct{classify_type}_{fold}"
     mat_output_file_path = f"{np_output_file_path}.mat"
     
-    # numpy形式で保存
+    # Save in numpy format
     save_data = {
         'cam0' : cams0,
         'cam1' : cams1,
