@@ -79,10 +79,10 @@ class EEGModel(nn.Module):
 class EEGFilterModel(nn.Module):
     """
     EEG Filter Model (tentative)
-    横:250, 縦:63, 色:5chの画像と同様なものとして2次元の畳み込みを行ったモデル.
-    (パラメータなどは現在適当な値)
-    EEGの63chは並び順空間的な位置情報を表していないので、これが適切かどうかは検討する必要がある.
-    それに応じて、縦横のkernelサイズや、strideサイズを同じにしているが、ここも検討する必要がある.
+    A model with 2D convolution: the input data is considered as an image of width:250, height:63, and color:5ch
+    (Parameters and others are entered as appropriate values for now)
+    Since the 63-channels of EEG does not represent the spatial location information in the order, it is necessary to examine whether the data is appropriate or not
+    The kernel size (vertical and horizontal) and stride size should be considered accordingly
     """
     def __init__(self):
         super(EEGFilterModel, self).__init__()
@@ -114,7 +114,7 @@ class EEGFilterModel(nn.Module):
             Flatten(),
             nn.Linear(in_features=32*196,
                       out_features=128),
-            nn.ReLU(), # ここのReLUが抜けていたので修正した
+            nn.ReLU(), # Fixed a missing ReLU here
             nn.Linear(in_features=128,
                       out_features=1)
         )
@@ -129,9 +129,9 @@ class EEGFilterModel(nn.Module):
 class EEGFilterModel2(nn.Module):
     """
     EEG Filter Model2
-    横:250, 縦:5, 色:63chの画像と同様なものとして2次元の畳み込みを行ったモデル.
-    (filterで得られた5chは並び順が意味があるので、この様に扱う方が意味的には適切)
-    縦横のkernelサイズや、strideサイズは適切に設定する必要がある.
+    A model with 2D convolution: the input data is considered as an image of width:250, height:63, and color:5ch
+    (This model could be more appropriate because the order of the 5 channels obtained by filter is meaningful)
+    The kernel size (vertical and horizontal) and stride size should be considered
     """
     def __init__(self):
         super(EEGFilterModel2, self).__init__()
@@ -172,7 +172,7 @@ class EEGFilterModel2(nn.Module):
         # x=(10, 5, 63, 250)
         # 5ch, 63chの場所を入れ替える
         x = torch.transpose(x, 1, 2)
-        # x=(10, 63, 5, 250) -> 幅250, 高さ5, 63ch, batch_size=10の画像と同じ扱い.
+        # x=(10, 63, 5, 250) -> the input data is considered as an image of width:250, height:5, and 63ch, batch_size=10
         h = self.eeg_net(x)
         h = torch.sigmoid(h)
         return h
