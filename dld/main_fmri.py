@@ -74,7 +74,7 @@ def eval_epoch(model, device, validation_loader, epoch, logger):
             validation_loss = F.binary_cross_entropy(output,
                                                label,
                                                reduction='sum').item()
-            # sum up batch loss
+            # Sum up batch loss
             result = (output > threshold).float() * 1
             pred = torch.sum(result == label).item()
             correct += pred
@@ -153,7 +153,7 @@ def train_fold(args, classify_type, fold):
                                    debug=args.debug)
 
     if args.epochs == 0:
-        # In the case of no training, only save the model.
+        # In the case of no training, only save the model
         early_stopping.save(model)
 
     for epoch in range(args.epochs):
