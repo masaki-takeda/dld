@@ -80,7 +80,7 @@ class EEGFilterModel(nn.Module):
     """
     EEG Filter Model (tentative)
     A model with 2D convolution: the input data is considered as an image of width:250, height:63, and color:5ch
-    (Parameters and others are entered as appropriate values for now)
+    (c)
     Since the 63-channels of EEG does not represent the spatial location information in the order, it is necessary to examine whether the data is appropriate or not
     The kernel size (vertical and horizontal) and stride size should be considered accordingly
     """
@@ -129,7 +129,7 @@ class EEGFilterModel(nn.Module):
 class EEGFilterModel2(nn.Module):
     """
     EEG Filter Model2
-    A model with 2D convolution: the input data is considered as an image of width:250, height:63, and color:5ch
+    A model with 2D convolution: the input data is considered as an image of width:250, height:5, and color:63ch
     (This model could be more appropriate because the order of the 5 channels obtained by filter is meaningful)
     The kernel size (vertical and horizontal) and stride size should be considered
     """
@@ -170,7 +170,7 @@ class EEGFilterModel2(nn.Module):
         
     def forward(self, x):
         # x=(10, 5, 63, 250)
-        # 5ch, 63chの場所を入れ替える
+        # Swap the locations of 5ch and 63ch
         x = torch.transpose(x, 1, 2)
         # x=(10, 63, 5, 250) -> the input data is considered as an image of width:250, height:5, and 63ch, batch_size=10
         h = self.eeg_net(x)
@@ -179,14 +179,14 @@ class EEGFilterModel2(nn.Module):
 
     def forward_grad_cam(self, x, cam_level=0):
         # x=(10, 5, 63, 250)
-        # 5ch, 63chの場所を入れ替える
+        # Swap the locations of 5ch and 63ch
         x = torch.transpose(x, 1, 2)
         
         self.grad_extractor = GradExtractor()
 
         if cam_level == 0:
             e_layer = '7'
-            # [7]=Conv1dの後のRelu()
+            # Relu() after [7]=Conv1d
         elif cam_level == 1:
             e_layer = '5'
         elif cam_level == 2:
@@ -209,8 +209,8 @@ class EEGFilterModel2(nn.Module):
 class EEGFilterModel3(nn.Module):
     """
     EEG Filter Model3
-    一番最初にFCを挟んだ後に1d convを入ていくもの.
-    (パラメータなどは現在適当な値)
+    A model that first performs FC and then 1d conv
+    (Parameters and others are specified as appropriate values for now)
     """
     def __init__(self):
         super(EEGFilterModel3, self).__init__()
@@ -239,7 +239,7 @@ class EEGFilterModel3(nn.Module):
             nn.Conv1d(in_channels=32,
                       out_channels=32,
                       kernel_size=3,
-                      stride=1, # ここのstrideを2にするとダメになる
+                      stride=1, # If stride=2, it will not work correctly
                       padding=1), # (10,32,28) #(10, 32, 42)
             nn.ReLU(),
             Flatten(),
@@ -277,7 +277,7 @@ class EEGModel2(nn.Module):
             nn.Conv1d(in_channels=63,
                       out_channels=10,
                       kernel_size=5,
-                      stride=3, # 最初のStride大きくした
+                      stride=3, # Set the first Stride larger
                       padding=2),
             nn.ReLU(),
             nn.Conv1d(in_channels=10,
@@ -314,8 +314,8 @@ class EEGModel2(nn.Module):
     def forward_grad_cam(self, x):
         self.grad_extractor = GradExtractor()
         h = self.grad_extractor.forward(self.eeg_net, x, '7')
-        # [7]=Conv1dの後のRelu()
-        return h # ここはsigmoidを通さない
+        # Relu() after [7]=Conv1d
+        return h # Without sigmoid() here
 
     def get_cam_gradients(self):
         return self.grad_extractor.grad
@@ -343,10 +343,10 @@ class EEGRNNModel(nn.Module):
             self.fc = nn.Linear(hidden_size, 1)
     
     def forward(self, input, state):
-        # stateは無視する
+        # Ignore "state"
         output, _ = self.lstm(input, state)
         #output = self.fc(output)
-        output = self.fc(output[:,-1,:]) # 最後のoutputのみを利用する場合
+        output = self.fc(output[:,-1,:]) # For using only the last output
         output = torch.sigmoid(output)
         return output
     
@@ -375,7 +375,7 @@ class EEGConvRNNModel(nn.Module):
             nn.Conv1d(in_channels=63,
                       out_channels=10,
                       kernel_size=5,
-                      stride=3, # 最初のStride大きくした
+                      stride=3, # Set the first Stride larger
                       padding=2),
             nn.ReLU(),
             nn.Conv1d(in_channels=10,
@@ -398,12 +398,12 @@ class EEGConvRNNModel(nn.Module):
             self.fc = nn.Linear(hidden_size, 1)
     
     def forward(self, input, state):
-        # inputはconv系なので(batch, dim, seq)
+        # Since "input" belongs to "conv" (batch, dim, seq)
         h = self.conv_net(input)
         h = torch.transpose(h, 1, 2)
         # (batch, seq, dim)
         output, _ = self.lstm(h, state)
-        output = self.fc(output[:,-1,:]) # 最後のoutputのみを利用する場合
+        output = self.fc(output[:,-1,:]) # For using only the last output
         output = torch.sigmoid(output)
         return output
     
@@ -457,7 +457,7 @@ class EEGFtModel(nn.Module):
         
     def forward(self, x):
         # x=(10, 17, 63, 125)
-        # 5ch, 63chの場所を入れ替える
+        # Swap the locations of 5ch and 63ch
         x = torch.transpose(x, 1, 2)
         # x=(10, 63, 17, 125)
         h = self.eeg_net(x)
@@ -879,7 +879,7 @@ def get_combined_model(model_type, fmri_ch_size,
 
 
 if __name__ == '__main__':
-    # デバッグ用のコード例
+    # Example code for debugging
     model = EEGModel()
 
     batch_size = 10
