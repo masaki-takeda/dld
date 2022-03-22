@@ -29,10 +29,10 @@ def preprocess_eeg(src_base, dst_base, behaviors, normalize_type, frame_type):
         output_file_path = os.path.join(dst_base, "final_eeg_data_none") # File name of npz
 
     if frame_type == "filter":
-        # フィルタ利用の場合は後ろに"_filter"を付加したファイル名にする
+        # Append "_filter" to the end of the file name when using filters
         output_file_path = "{}_filter".format(output_file_path)
     elif frame_type == "ft":
-        # FTの場合は後ろに"_ft"を付加したファイル名にする
+        # Append "_ft" to the end of the file name when using FT
         output_file_path = "{}_ft".format(output_file_path)
     
     np.savez(output_file_path,
@@ -67,12 +67,12 @@ def save_aggregated_behavior_data(dst_base, behaviors, debug):
 
     for behavior in behaviors:
         for trial in behavior.trials:
-            # datasetにおいては、パラメータをすべて0始まりの値にするために、1を引いておく
+            # In the dataset, subtract 1 from the parameters to be zero-based
             categories.append(trial.category-1)
             identities.append(trial.identity-1)
             sub_categories.append(trial.sub_category-1)
             angles.append(trial.angle-1)
-            # 各trailの属するsubject id(TM_191008_01など)を保存しておく.
+            # Save the participant IDs to which each trail belongs(e.g. TM_191008_01)
             subjects.append(behavior.subject_id)
 
     output_file_path = os.path.join(dst_base, "final_behavior_data") # File name of npz
@@ -104,21 +104,21 @@ def collect_behaviors(src_base, debug):
         reject_trials = []
 
         if debug and date > 191009:
-            # デバッグ時は被験者を最初の数人だけを利用するようにする
+            # Use only the first few participants during debugging
             break
         
         for i in range(4, column_size):
             if not np.isnan(row[i]):
                 reject_trial = int(row[i])
-                # これは1始まりの値になっている
+                # This is one-based
                 reject_trials.append(reject_trial)
                 
         if valid:
-            # Behaviorインスタンスを作成
+            # Create Behavior instances
             behavior = Behavior(src_base, date, subject, run, reject_trials)
             behaviors.append(behavior)
         else:
-            # TODO: 一部欠けているデータ等をskipしている
+            # TODO: Some missing data is skipped
             print("skipping invalid behavior: date={}, subject={}, run={}".format(
                 date, subject, run))
         
@@ -149,9 +149,9 @@ def preprocess():
                         default="false")
     args = parser.parse_args()
 
-    # prepardデータの場所
+    # Prepared data location
     src_base = args.src_base
-    # データの書き出し場所
+    # Export data location
     dst_base = args.dst_base
 
     if not os.path.exists(src_base):
@@ -159,7 +159,7 @@ def preprocess():
     if not os.path.exists(dst_base):
         os.makedirs(dst_base)
 
-    # Behaviorは(保存するしないにかかわらず)、experiments.csvから毎回ロードする.
+    # Behavior data is loaded every time from experiments.csv, regardless of whether it has been saved or not
     behaviors = collect_behaviors(src_base, args.debug)
 
     if args.eeg:
@@ -172,7 +172,7 @@ def preprocess():
                         smooth=args.smooth)
         
     if args.behavior:
-        # Behaviorを保存する
+        # Save Behavior
         save_aggregated_behavior_data(dst_base, behaviors, args.debug)
 
 
