@@ -21,7 +21,7 @@ class ReLUHook():
         self.forward_output = ten_out
 
     def clear(self):
-        # Clear reference to forward_output
+        # Clear reference to "forward_output"
         self.forward_output = None
 
     
