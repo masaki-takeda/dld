@@ -44,14 +44,14 @@ def aggregate_grad_cam(output_dir, classify_type, type):
         cam_nopool = data['cam_nopool'] # (1807, 3, 28)
 
         if type == 'eeg':
-            cam_nopool = np.mean(cam_nopool, axis=1) # (1807, 28) 3chの平均を取る
+            cam_nopool = np.mean(cam_nopool, axis=1) # (1807, 28) Take the average of the 3 channels
     
         labels = data['label'] # (1807,)
         
         cam_nopool_label0 = cam_nopool[(labels==0)] # (910, 28)
         cam_nopool_label1 = cam_nopool[(labels==1)] # (897, 28)
         
-        # 1Fold内での平均
+        # Average in 1 Fold
         mean_cam_nopool_label0 = np.mean(cam_nopool_label0, axis=0) # (28,)
         mean_cam_nopool_label1 = np.mean(cam_nopool_label1, axis=0) # (28,)
         
@@ -93,7 +93,7 @@ def aggregate_grad_cam_combined(output_dir, classify_type):
         f_cam_nopool_label0 = f_cam_nopool[(labels==0)] # (910, 6, 7, 6))
         f_cam_nopool_label1 = f_cam_nopool[(labels==1)] # (897, 6, 7, 6))    
         
-        # 1Fold内での平均
+        # Average in 1 Fold
         f_mean_cam_nopool_label0 = np.mean(f_cam_nopool_label0, axis=0) # (6, 7, 6))
         f_mean_cam_nopool_label1 = np.mean(f_cam_nopool_label1, axis=0) # (6, 7, 6))
         
@@ -105,12 +105,12 @@ def aggregate_grad_cam_combined(output_dir, classify_type):
 
         # [EEG]
         e_cam_nopool = data['e_cam_nopool'] # (1807, 3, 28)
-        e_cam_nopool = np.mean(e_cam_nopool, axis=1) # (1807, 28) 3chの平均を取る
+        e_cam_nopool = np.mean(e_cam_nopool, axis=1) # (1807, 28) Take the average of the 3 channels
         
         e_cam_nopool_label0 = e_cam_nopool[(labels==0)] # (910, 28))
         e_cam_nopool_label1 = e_cam_nopool[(labels==1)] # (897, 28))        
 
-        # 1Fold内での平均
+        # Average in 1 Fold
         e_mean_cam_nopool_label0 = np.mean(e_cam_nopool_label0, axis=0)
         e_mean_cam_nopool_label1 = np.mean(e_cam_nopool_label1, axis=0)
         
@@ -184,7 +184,7 @@ def export_grad_cam_eeg_sub_sub(output_dir,
         target0_name = 'Artificial'
         target1_name = 'Natural'
 
-    # x軸
+    # x-axis
     xs = (np.arange(0, 28) + 0.5) * (1000/28)
     
     plt.xlabel("time (ms)")
