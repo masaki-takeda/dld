@@ -496,7 +496,7 @@ class FMRIModel(nn.Module):
             nn.ReLU(),
             nn.Dropout3d(p=0.5),
             Flatten(),
-            # ここが8064x128となっていて結構大きい (OHBMの方入力が小さめなので2304x128のサイズ)
+            # This data is quite large (8064x128), (OHBM's input data is smaller (2304x128))
             nn.Linear(in_features=6*7*6*32,
                       out_features=128),
             nn.ReLU(),
@@ -554,7 +554,7 @@ class CombinedModel(nn.Module):
             nn.ReLU(),
             nn.Dropout3d(p=0.5),
             Flatten(),
-            # ここが8064x128となっていて結構大きい (OHBMの方入力が小さめなので2304x128のサイズ)
+            # This data is quite large (8064x128), (OHBM's input data is smaller (2304x128))
             nn.Linear(in_features=6*7*6*32,
                       out_features=128),
             nn.ReLU(),
@@ -678,7 +678,7 @@ class CombinedFilterModel(nn.Module):
             nn.ReLU(),
             nn.Dropout3d(p=0.5),
             Flatten(),
-            # ここが8064x128となっていて結構大きい (OHBMの方入力が小さめなので2304x128のサイズ)
+            # This data is quite large (8064x128), (OHBM's input data is smaller (2304x128))
             nn.Linear(in_features=6*7*6*32,
                       out_features=128),
             nn.ReLU(),
