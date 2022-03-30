@@ -7,7 +7,7 @@ from eeg import EEG
 
 class EEGTest(unittest.TestCase):
     def test_init(self):
-        # TDOO: Require to modify it
+        # TDOO: Need to update
         eeg = EEG(date="191008", subject=1, run=1)
         self.assertEqual(eeg.data.shape, (63, 375, 50))
         

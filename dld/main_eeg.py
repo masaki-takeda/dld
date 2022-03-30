@@ -34,7 +34,7 @@ def train_epoch(model, device, train_loader, optimizer, epoch, logger,
         label = sample_batched['label']
         if transpose_input:
             # Replace x_dim and seq in RNN
-            # TODO: whether to be able to refactor by putting it in forward()
+            # TODO: Refactor by putting it in forward()
             data = torch.transpose(data, 1, 2) # (batch_size, seq_length, x_dim)
         
         data, label = data.to(device), label.to(device)
@@ -43,7 +43,7 @@ def train_epoch(model, device, train_loader, optimizer, epoch, logger,
 
         if use_state:
             # Use state in RNN
-            # TODO: whether to be able to refactor by putting it in forward()
+            # TODO: Refactor by putting it in forward()
             state = model.init_state(data.shape[0], device)
             output = model(data, state)
         else:

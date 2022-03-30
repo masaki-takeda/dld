@@ -34,7 +34,7 @@ class EEGModel(nn.Module):
             nn.Conv1d(in_channels=32,
                       out_channels=32,
                       kernel_size=3,
-                      stride=1, # If stride=2, it will not work correctly
+                      stride=1, # If stride=2, results were not good
                       padding=1), # (10,32,28) #(10, 32, 42)
             nn.ReLU(),
             Flatten(),
@@ -80,7 +80,7 @@ class EEGFilterModel(nn.Module):
     """
     EEG Filter Model (tentative)
     A model with 2D convolution: the input data is considered as an image of width:250, height:63, and color:5ch
-    (c)
+    (Parameters should be tuned)
     Since the 63-channels of EEG does not represent the spatial location information in the order, it is necessary to examine whether the data is appropriate or not
     The kernel size (vertical and horizontal) and stride size should be considered accordingly
     """
@@ -209,8 +209,8 @@ class EEGFilterModel2(nn.Module):
 class EEGFilterModel3(nn.Module):
     """
     EEG Filter Model3
-    A model that first performs FC and then 1d conv
-    (Parameters and others are specified as appropriate values for now)
+    A model that first applies FC and then 1d conv
+    (Parameters and settings should be tuned)
     """
     def __init__(self):
         super(EEGFilterModel3, self).__init__()
@@ -277,7 +277,7 @@ class EEGModel2(nn.Module):
             nn.Conv1d(in_channels=63,
                       out_channels=10,
                       kernel_size=5,
-                      stride=3, # Set the first Stride larger
+                      stride=3, # Set the first stride larger
                       padding=2),
             nn.ReLU(),
             nn.Conv1d(in_channels=10,
@@ -375,7 +375,7 @@ class EEGConvRNNModel(nn.Module):
             nn.Conv1d(in_channels=63,
                       out_channels=10,
                       kernel_size=5,
-                      stride=3, # Set the first Stride larger
+                      stride=3, # Set the first stride larger
                       padding=2),
             nn.ReLU(),
             nn.Conv1d(in_channels=10,
@@ -496,7 +496,7 @@ class FMRIModel(nn.Module):
             nn.ReLU(),
             nn.Dropout3d(p=0.5),
             Flatten(),
-            # This data is quite large (8064x128), (OHBM's input data is smaller (2304x128))
+            # Large unit size (8064x128), (OHBM's unit size is smaller (2304x128))
             nn.Linear(in_features=6*7*6*32,
                       out_features=128),
             nn.ReLU(),
@@ -554,7 +554,7 @@ class CombinedModel(nn.Module):
             nn.ReLU(),
             nn.Dropout3d(p=0.5),
             Flatten(),
-            # This data is quite large (8064x128), (OHBM's input data is smaller (2304x128))
+            # Large unit size (8064x128), (OHBM's unit size is smaller (2304x128))
             nn.Linear(in_features=6*7*6*32,
                       out_features=128),
             nn.ReLU(),
@@ -678,7 +678,7 @@ class CombinedFilterModel(nn.Module):
             nn.ReLU(),
             nn.Dropout3d(p=0.5),
             Flatten(),
-            # This data is quite large (8064x128), (OHBM's input data is smaller (2304x128))
+            # Large unit size (8064x128), (OHBM's unit size is smaller (2304x128))
             nn.Linear(in_features=6*7*6*32,
                       out_features=128),
             nn.ReLU(),

@@ -2,7 +2,7 @@ import torch
 
 class GradExtractor(object):
     """
-    For saving gradient for Grad-CAM
+    For saving gradients of Grad-CAM
     """
     def __init__(self):
         pass
@@ -11,7 +11,7 @@ class GradExtractor(object):
         self.grad = grad
 
     def forward(self, module, x, target_name):
-        # Only when None
+        # When target_name is None, gradient is taken at the input.
         if target_name == None:
             if x.requires_grad == False:
                 x.requires_grad = True

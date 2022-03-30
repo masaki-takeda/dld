@@ -79,9 +79,7 @@ def draw_text(draw, x, y, text, color=(0,0,0)):
 
 
 def normalize_signed_weights(weights):
-    """ Normalize so that the maximum value is 1.0 or the minimum value is -1.0 """
-    #weights = np.array(weights)
-    
+    """ Normalize so that the maximum positive value is 1.0 or the minimum negative value is -1.0 """
     max_plus = max(np.max(weights), 0.0)
     min_minus = min(np.min(weights), 0.0)
 

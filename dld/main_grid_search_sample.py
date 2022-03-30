@@ -1,4 +1,4 @@
-# Template of executing Grid search
+# Template of grid search execution
 from collections import OrderedDict
 import subprocess
 from subprocess import Popen
@@ -18,8 +18,7 @@ save_dir_prefix = "./saved_eeg"
 # When specifying up to a subdirectory as above
 # The save directory will be "./saved_eeg/gs_0_0", "./saved_eeg/gs_0_1" ... and so on
 
-# Target options of Grid search
-# Specify target options as an array
+# Grid search target options. Specify target options as an array
 variable_options["lr"]           = ["0.1", "0.01", "0.001"]
 variable_options["weight_decay"] = ["0.0", "0.01", "0.1"]
 
@@ -40,12 +39,11 @@ grid_search = GridSearch(target_file,
 
 command_lines = grid_search.get_command_lines()
 
-# Execution of Grid search
+# Grid search execution
 for command_line in command_lines:
     print("executing: {}".format(command_line))
     proc = Popen(command_line, shell=True)
     proc.wait()
 
-# Output the summarized results of Grid search
-# to "saved_eeg00_summary/summary.txt"
+# Output the summarized results of grid search to "saved_eeg00_summary/summary.txt"
 grid_search.export_summary()

@@ -6,10 +6,10 @@ from distutils.util import strtobool
 
 def get_common_parser():
     parser = argparse.ArgumentParser()
-    # Dataset of random seeds
+    # Random seed for the dataset
     parser.add_argument("--data_seed", type=int,
                         default=0)
-    # Run seeds
+    # Run seed
     parser.add_argument("--run_seed", type=int,
                         default=-1)
     # Save directory

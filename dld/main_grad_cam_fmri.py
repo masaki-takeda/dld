@@ -45,10 +45,10 @@ def get_fmri_grad_cam(model, data, label):
     f_cam_grad = cam_grads.cpu().numpy()[0] # (32, 6, 7, 6)
     f_feature  = cam_features.data.cpu().numpy()[0] # (32, 6, 7, 6)
 
-    # Take the average of the 6x7x6 voxel of the gradient
+    # Take the average of the gradients of 6x7x6 voxels
     f_weights = np.mean(f_cam_grad, axis=(1,2,3)) # (32,)
 
-    # Grad-CAM calculated with global-pooling as described in the manuscript
+    # Grad-CAM calculated with global-pooling as described in the original paper
     f_cam_org = np.zeros(f_feature.shape[1:], dtype = np.float32) # (6, 7, 6)
     for i, w in enumerate(f_weights):
         # Find the weighted sum of 32 (6,7,6) voxels

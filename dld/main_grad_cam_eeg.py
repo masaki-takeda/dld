@@ -121,7 +121,7 @@ def get_eeg_grad_cam(model, data, label, kernel_size, level_size):
     raw_grads     = model.get_cam_gradients() # [(1, 63, 250), ... x7]
     raw_features  = model.get_cam_features()  # [(1, 63, 250), ... x7]
     
-    # Remove 1 in batch  # To np.ndarray
+    # Remove batch size 1. To np.ndarray
     raw_grads    = [raw_grad[0].cpu().numpy()             for raw_grad    in raw_grads]
     raw_features = [raw_feature[0].cpu().detach().numpy() for raw_feature in raw_features]
 
@@ -149,7 +149,7 @@ def get_eeg_grad_cam(model, data, label, kernel_size, level_size):
         # (63, 1)
 
         # Compute Grad-CAM (grad x feature)
-        # Sum up in the channel direction and conduct ReLU
+        # Sum up along channel and apply ReLU
         # (without global pooling)
         grad_cam_nopool = np.maximum(
             np.sum(active_features * active_grads,      axis=0), 0)

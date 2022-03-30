@@ -80,7 +80,7 @@ class GridSearch:
 
         self.is_test = False
         if ("test" in self.fixed_options and self.fixed_options["test"] == "true"):
-            # For test validation
+            # Test evaluation
             self.is_test = True
     
         for variable_option in list(variable_options.items()):

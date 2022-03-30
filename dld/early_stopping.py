@@ -12,7 +12,7 @@ class EarlyStopping:
                  classify_type,
                  debug=False):
         self.patience = patience
-        self.ignore_epochs = ignore_epochs # Number of epochs to ignore the decision at first
+        self.ignore_epochs = ignore_epochs # Number of epochs to ignore the decision at the beggining
         self.save_dir = save_dir
         self.fold = fold
         
@@ -31,7 +31,7 @@ class EarlyStopping:
                        epoch,
                        model):
         if epoch < self.ignore_epochs and not self.debug:
-            # During the epoch period of first ignoring
+            # Ignore decision at the beggining
             return False
         
         score = validation_accuracy
@@ -46,7 +46,7 @@ class EarlyStopping:
             return self.early_stop
             
         if self.best_score is None:
-            # For first call
+            # First time
             self.best_score = score
             self.max_validation_accuracy = validation_accuracy
             self.accompanied_train_accuracy = train_accuracy

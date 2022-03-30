@@ -492,7 +492,7 @@ class EEGTCNModelSub2(nn.Module):
 
 
 class EEGTCNModel(nn.Module):
-    """ TCN using only the last time step of the last Level """
+    """ TCN using only the last time step of the last level """
     def __init__(self,
                  kernel_size=7,
                  level_size=7,
@@ -543,7 +543,7 @@ class EEGTCNModel(nn.Module):
 
 
 class EEGTCNModel2(nn.Module):
-    """ TCN using all the last time steps of the last Level """
+    """ TCN using all time steps of the last level """
     def __init__(self,
                  kernel_size=7,
                  level_size=7,
