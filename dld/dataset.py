@@ -140,7 +140,7 @@ class BrainDataset(Dataset):
         average_trial_size:
            (int) average number of trials
         average_repeat_size:
-           (int) number of repetitions for padding
+           (int) number of repetitions for augmentation
         subjects_per_fold:
            (int) number of participants assined to one Fold
         """
@@ -240,7 +240,7 @@ class BrainDataset(Dataset):
             
             self.fmri_data_dir = os.path.join(self.data_dir, fmri_data_dir)
             
-        # The method used is to storage all data and change only the indexes
+        # The method used is to store all data as it is and change only the indexes
         
         # Loading the behavior data
         behavior_data_path = os.path.join(self.data_dir, "final_behavior_data")
@@ -292,7 +292,7 @@ class BrainDataset(Dataset):
             else:
                 train_subjects += list(fold_subjects)
         
-        # True/False of location of Trial for test, training, and validation: [True, False, ....]
+        # Location of trial for training, validation, and test: [True, False, ....]
         test_subject_set       = set(test_subjects)
         train_subject_set      = set(train_subjects)
         validation_subject_set = set(validation_subjects)
@@ -435,13 +435,13 @@ class BrainDataset(Dataset):
             # (63, 375) or (5, 63, 375) or (17, 63, 163)
             if self.eeg_frame_type == EEG_FRAME_TYPE_FILTER:
                 # For using Filter
-                eeg_data = eeg_data[:,:,125:] # For excluding from -0.5 seconds to 0 seconds # (5, 63, 250)
+                eeg_data = eeg_data[:,:,125:] # Excluding from -0.5 seconds to 0 seconds # (5, 63, 250)
             elif self.eeg_frame_type == EEG_FRAME_TYPE_FT:
                 # For using FT
-                eeg_data = eeg_data[:,:,38:] # For excluding from -0.5 seconds to 0 seconds # (5, 63, 125)
+                eeg_data = eeg_data[:,:,38:] # Excluding from -0.5 seconds to 0 seconds # (5, 63, 125)
             else:
                 # For normal
-                eeg_data = eeg_data[:,125:] # For excluding from -0.5 seconds to 0 seconds # (63, 250)
+                eeg_data = eeg_data[:,125:] # Excluding from -0.5 seconds to 0 seconds # (63, 250)
 
             if DEBUG_USE_EEG_MASK:
                 # When masking
