@@ -1,5 +1,4 @@
-# Multi-modal deep neural decoding of visual object representation in humans
-# for fMRI data, EEG data, or combined fMRI-EEG data
+# Multi-modal deep neural decoding of visual object representation in humans (for fMRI data, EEG data, or combined fMRI-EEG data)
 
 Getting started
 
