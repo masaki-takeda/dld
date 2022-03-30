@@ -1,8 +1,5 @@
 import numpy as np
-try:
-    import h5py
-except:
-    print('h5py import error')
+import h5py
 
 
 class Trial(object):

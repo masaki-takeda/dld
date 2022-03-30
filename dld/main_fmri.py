@@ -15,7 +15,7 @@ from logger import Logger
 import options
 import export
 from early_stopping import EarlyStopping
-from utils import get_device, fix_state_dict, save_result, get_test_subject_ids, fix_run_seed
+from utils import get_device, fix_state_dict, save_result, save_predictions, get_test_subject_ids, fix_run_seed
 
 
 def train_epoch(model, device, train_loader, optimizer, epoch, logger):
@@ -56,12 +56,16 @@ def train_epoch(model, device, train_loader, optimizer, epoch, logger):
     return accuracy
 
 
-def eval_epoch(model, device, validation_loader, epoch, logger):
+def eval_epoch(model, device, validation_loader, epoch, logger, record_result=False):
     model.eval()
     validation_loss = 0
     correct = 0
 
     threshold = torch.Tensor([0.5]).to(device)
+
+    if record_result:
+        recorded_labels = []
+        recorded_preds = []
     
     with torch.no_grad():
         for sample_batched in validation_loader:
@@ -71,6 +75,11 @@ def eval_epoch(model, device, validation_loader, epoch, logger):
             data, label = data.to(device), label.to(device)
             
             output = model(data)
+
+            if record_result:
+                recorded_labels += list(label.cpu().detach().numpy().reshape(-1))
+                recorded_preds += list(output.cpu().detach().numpy().reshape(-1))
+            
             validation_loss = F.binary_cross_entropy(output,
                                                label,
                                                reduction='sum').item()
@@ -86,7 +95,11 @@ def eval_epoch(model, device, validation_loader, epoch, logger):
     if logger is not None:    
         logger.log("f_loss/validation", validation_loss, epoch)
         logger.log("f_accuracy/validation", accuracy, epoch)
-    return accuracy
+
+    if record_result:
+        return accuracy, (recorded_labels, recorded_preds)
+    else:
+        return accuracy
 
 
 def train_fold(args, classify_type, fold):
@@ -238,7 +251,7 @@ def test_fold(args, classify_type, fold):
                                           subjects_per_fold=args.subjects_per_fold,
                                           debug=args.debug),
                              batch_size=args.batch_size,
-                             shuffle=True,
+                             shuffle=False,
                              **kwargs)
 
     if args.run_seed >= 0:
@@ -255,9 +268,10 @@ def test_fold(args, classify_type, fold):
 
     model.load_state_dict(state)
 
-    test_accuracy = eval_epoch(model, device, test_loader, 0, None)
+    test_accuracy, (recorded_labels, recorded_preds) = eval_epoch(
+        model, device, test_loader, 0, None, record_result=True)
 
-    return test_accuracy
+    return test_accuracy, (recorded_labels, recorded_preds)
 
 
 def test_ten_folds(args, classify_type):
@@ -267,8 +281,11 @@ def test_ten_folds(args, classify_type):
     
     for fold in range(args.fold_size):
         print("test fold: {}".format(fold))
-        test_accuracy = test_fold(args, classify_type, fold)
+        test_accuracy, (recorded_labels, recorded_preds) = test_fold(
+            args, classify_type, fold)
         test_accuracies.append(test_accuracy)
+        # Save predicted values
+        save_predictions(args.save_dir, classify_type, fold, recorded_labels, recorded_preds)
 
     test_accurcy_mean = np.mean(test_accuracies)
     test_accurcy_std = np.std(test_accuracies)
