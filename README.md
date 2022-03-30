@@ -122,6 +122,12 @@ python3 preprocess_average.py --dst_base=/data2/DLD/Data_Converted --eeg_frame_t
 
 ## 3. Training
 
+### 3.0 Learned network models
+Learned network models for fMRI data, EEG data and combined fMRI-EEG data are available at:
+https://drive.google.com/drive/folders/15NWHF4EsaP8PugU6GLf56-_DWv3mcIbF?usp=sharing
+
+
+
 ### 3.1 Running Docker container
 
 ```
