@@ -2,6 +2,9 @@
 
 Getting started
 
+## 0. Preface
+This program was originally developed for deep neural decoding of visual object representation in human participants.
+Results were uploaded at bioRxiv: .
 
 ## 1. Docker image build
 
