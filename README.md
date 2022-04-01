@@ -50,7 +50,7 @@ Navigate to the project directory.
 
 ```
 $ ./scripts/run.sh
-# cd /opt/simul/
+# cd /opt/dld/
 ```
 
 
@@ -132,7 +132,7 @@ https://drive.google.com/drive/folders/15NWHF4EsaP8PugU6GLf56-_DWv3mcIbF?usp=sha
 
 ```
 $ ./scripts/run.sh
-# cd /opt/simul/
+# cd /opt/dld/
 ```
 
 
