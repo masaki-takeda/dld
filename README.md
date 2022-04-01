@@ -5,7 +5,7 @@
 ## 1. Preface
 
 This program was originally developed for deep neural decoding of visual object representation in human participants.
-Results were uploaded at bioRxiv: .
+You can find a relating manuscript before the publication at bioRxiv: .
 
 
 
