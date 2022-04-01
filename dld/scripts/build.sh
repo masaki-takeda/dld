@@ -1,3 +1,3 @@
 #!/bin/sh
-sudo docker build -t kut/simul docker
+sudo docker build -t kut/dld docker
 
