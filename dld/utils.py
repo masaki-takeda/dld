@@ -54,6 +54,22 @@ def save_result(save_dir, classify_type, results, for_test=False):
     f.writelines(lines)
     f.close()
 
+
+def save_predictions(save_dir, classify_type, fold, labels, preds):
+    """ Save predicted values """
+    file_name = save_dir + "/preds_ct{}_{}_test.csv".format(classify_type, fold)
+    
+    lines = []
+    lines.append("label,prob\n")
+    
+    for label,pred in zip(labels, preds):
+        line = "{},{:.5f}\n".format(int(label),pred)
+        lines.append(line)
+
+    f = open(file_name, "w")
+    f.writelines(lines)
+    f.close()
+
     
 def get_test_subject_ids(test_subjects):
     """ Make a string of the test_subjects option into an ID array """
