@@ -56,7 +56,7 @@ def get_common_parser():
     parser.add_argument("--level_size", type=int,
                         default=-1) # The level size for TCN
     parser.add_argument("--level_hidden_size", type=int,
-                        default=63) # Numver of the output channels for TCN
+                        default=63) # Number of the output channels for TCN
     parser.add_argument("--residual", type=strtobool,
                         default="true")
     parser.add_argument("--debug", type=strtobool,
@@ -169,7 +169,7 @@ def get_grad_cam_args():
     parser.add_argument("--level_size", type=int,
                         default=-1) # The level size for TCN
     parser.add_argument("--level_hidden_size", type=int,
-                        default=63) # Numver of the output channels for TCN
+                        default=63) # Number of the output channels for TCN
     parser.add_argument("--residual", type=strtobool,
                         default="true")
     parser.add_argument("--debug", type=strtobool,
@@ -189,7 +189,7 @@ def save_args(args):
     time_str = dt.now().strftime('# %Y-%m-%d %H:%M')
     lines.append("{}\n".format(time_str))
     args_str = str(args)
-    # Strip head "Namespace" string
+    # Strip the head "Namespace" string
     args_str = re.sub(r'^Namespace\(', '', args_str)
     args_str = re.sub(r'\)$', '', args_str)
     
