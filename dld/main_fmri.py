@@ -15,7 +15,7 @@ from logger import Logger
 import options
 import export
 from early_stopping import EarlyStopping
-from utils import get_device, fix_state_dict, save_result, save_predictions, get_test_subject_ids, fix_run_seed
+from utils import get_device, fix_state_dict, save_result, save_predictions, get_test_subject_ids, fix_run_seed, save_pfi_result
 
 
 def train_epoch(model, device, train_loader, optimizer, epoch, logger):
@@ -115,12 +115,15 @@ def train_fold(args, classify_type, fold):
                                            use_eeg=False,
                                            data_dir=args.data_dir,
                                            fmri_frame_type=args.fmri_frame_type,
+                                           fmri_offset_tr=args.fmri_offset_tr,
                                            use_smooth=args.smooth,
                                            average_trial_size=args.average_trial_size,
                                            average_repeat_size=args.average_repeat_size,
                                            fold=fold,
                                            test_subjects=test_subject_ids,
                                            subjects_per_fold=args.subjects_per_fold,
+                                           unmatched=args.unmatched,
+                                           fmri_mask_name=args.fmri_mask,
                                            debug=args.debug),
                               batch_size=args.batch_size,
                               shuffle=True,
@@ -132,12 +135,15 @@ def train_fold(args, classify_type, fold):
                                                 use_eeg=False,
                                                 data_dir=args.data_dir,
                                                 fmri_frame_type=args.fmri_frame_type,
+                                                fmri_offset_tr=args.fmri_offset_tr,
                                                 use_smooth=args.smooth,
                                                 average_trial_size=args.average_trial_size,
                                                 average_repeat_size=args.average_repeat_size,
                                                 fold=fold,
                                                 test_subjects=test_subject_ids,
                                                 subjects_per_fold=args.subjects_per_fold,
+                                                unmatched=args.unmatched,
+                                                fmri_mask_name=args.fmri_mask,
                                                 debug=args.debug),
                                    batch_size=args.batch_size,
                                    shuffle=True,
@@ -243,12 +249,15 @@ def test_fold(args, classify_type, fold):
                                           use_eeg=False,
                                           data_dir=args.data_dir,
                                           fmri_frame_type=args.fmri_frame_type,
+                                          fmri_offset_tr=args.fmri_offset_tr,
                                           use_smooth=args.smooth,
                                           average_trial_size=args.average_trial_size,
                                           average_repeat_size=args.average_repeat_size,
                                           fold=fold,
                                           test_subjects=test_subject_ids,
                                           subjects_per_fold=args.subjects_per_fold,
+                                          unmatched=args.unmatched,
+                                          fmri_mask_name=args.fmri_mask,
                                           debug=args.debug),
                              batch_size=args.batch_size,
                              shuffle=False,
@@ -272,6 +281,80 @@ def test_fold(args, classify_type, fold):
         model, device, test_loader, 0, None, record_result=True)
 
     return test_accuracy, (recorded_labels, recorded_preds)
+
+
+def test_pfi_fold(args, classify_type, fold):
+    device, use_cuda = get_device(args.gpu)
+    kwargs = {'num_workers': 4, 'pin_memory': True} if use_cuda else {}
+
+    test_subject_ids = get_test_subject_ids(args.test_subjects)
+
+    base_test_loader = DataLoader(BrainDataset(data_type=DATA_TYPE_TEST,
+                                               classify_type=classify_type,
+                                               data_seed=args.data_seed,
+                                               use_fmri=True,
+                                               use_eeg=False,
+                                               data_dir=args.data_dir,
+                                               fmri_frame_type=args.fmri_frame_type,
+                                               fmri_offset_tr=args.fmri_offset_tr,
+                                               use_smooth=args.smooth,
+                                               average_trial_size=args.average_trial_size,
+                                               average_repeat_size=args.average_repeat_size,
+                                               fold=fold,
+                                               test_subjects=test_subject_ids,
+                                               subjects_per_fold=args.subjects_per_fold,
+                                               unmatched=args.unmatched,
+                                               debug=args.debug),
+                                  batch_size=args.batch_size,
+                                  shuffle=False,
+                                  **kwargs)
+
+    if args.run_seed >= 0:
+        # Fix random seeds at runtime
+        fix_run_seed(args.run_seed + fold)
+
+    fmri_ch_size = base_test_loader.dataset.fmri_ch_size
+
+    model = get_fmri_model(fmri_ch_size, args.parallel, device)
+    
+    model_path  = "{}/model_ct{}_{}.pt".format(args.save_dir, classify_type, fold)
+    state = torch.load(model_path, device)
+    state = fix_state_dict(state)
+
+    model.load_state_dict(state)
+
+    base_accuracy = eval_epoch(model, device, base_test_loader, 0, None, record_result=False)
+
+    importances = []
+    
+    for pfi_shuffle_index in range(args.pfi_shuffle_size):
+        pfi_test_loader = DataLoader(BrainDataset(data_type=DATA_TYPE_TEST,
+                                                  classify_type=classify_type,
+                                                  data_seed=args.data_seed,
+                                                  use_fmri=True,
+                                                  use_eeg=False,
+                                                  data_dir=args.data_dir,
+                                                  fmri_frame_type=args.fmri_frame_type,
+                                                  fmri_offset_tr=args.fmri_offset_tr,
+                                                  use_smooth=args.smooth,
+                                                  average_trial_size=args.average_trial_size,
+                                                  average_repeat_size=args.average_repeat_size,
+                                                  fold=fold,
+                                                  test_subjects=test_subject_ids,
+                                                  subjects_per_fold=args.subjects_per_fold,
+                                                  unmatched=args.unmatched,
+                                                  fmri_mask_name=args.fmri_mask, # Set Mask
+                                                  pfi_seed=pfi_shuffle_index, # Set PFI shuffle seed
+                                                  debug=args.debug),
+                                     batch_size=args.batch_size,
+                                     shuffle=False,
+                                     **kwargs)
+        
+        pfi_test_accuracy = eval_epoch(model, device, pfi_test_loader, 0, None, record_result=False)
+        importance = base_accuracy - pfi_test_accuracy
+        importances.append(importance)
+        
+    return base_accuracy, importances
 
 
 def test_ten_folds(args, classify_type):
@@ -304,11 +387,30 @@ def test_ten_folds(args, classify_type):
     save_result(args.save_dir, classify_type, results, for_test=True)
 
 
+def test_pfi(args, classify_type):
+    print("start PFI calculation: classify_type={}".format(classify_type))
+    
+    base_accuracies = []
+    all_importances = []
+    
+    for fold in range(args.fold_size):
+        print("test PFI fold: {}".format(fold))
+        base_accuracy, importances = test_pfi_fold(args, classify_type, fold)
+        base_accuracies.append(base_accuracy)
+        all_importances.append(importances)
+
+    save_pfi_result(args.save_dir, classify_type,
+                    args.fmri_mask,
+                    base_accuracies, all_importances)
+
+
 def main():
     args = options.get_fmri_args()
     options.save_args(args)
     
     if args.test == False:
+        assert args.pfi_shuffle_size == 0
+        
         # Train
         if args.classify_type == CLASSIFY_ALL:
             train_ten_folds(args, classify_type=FACE_OBJECT)
@@ -319,13 +421,22 @@ def main():
         else:
             train_ten_folds(args, classify_type=args.classify_type)
     else:
-        # Test
-        if args.classify_type == CLASSIFY_ALL:
-            test_ten_folds(args, classify_type=FACE_OBJECT)
-            test_ten_folds(args, classify_type=MALE_FEMALE)
-            test_ten_folds(args, classify_type=ARTIFICIAL_NATURAL)
+        if args.pfi_shuffle_size == 0:
+            # Test
+            if args.classify_type == CLASSIFY_ALL:
+                test_ten_folds(args, classify_type=FACE_OBJECT)
+                test_ten_folds(args, classify_type=MALE_FEMALE)
+                test_ten_folds(args, classify_type=ARTIFICIAL_NATURAL)
+            else:
+                test_ten_folds(args, classify_type=args.classify_type)
         else:
-            test_ten_folds(args, classify_type=args.classify_type)
+            # PFI calculation
+            if args.classify_type == CLASSIFY_ALL:
+                test_pfi(args, classify_type=FACE_OBJECT)
+                test_pfi(args, classify_type=MALE_FEMALE)
+                test_pfi(args, classify_type=ARTIFICIAL_NATURAL)
+            else:
+                test_pfi(args, classify_type=args.classify_type)
 
 
 if __name__ == '__main__':

@@ -15,16 +15,24 @@ class Subject:
                  average_trial_size,
                  average_repeat_size):
         self.subject_id = subject_id
-        
-        extended_indices0 = []
-        extended_indices1 = []
+
+        self.indices0 = indices0
+        self.indices1 = indices1
+        self.average_trial_size = average_trial_size
+        self.average_repeat_size = average_repeat_size
+
+        extended_indices0 = [] # indices0[]をシャッフルしtaverage_repeat_size回繋げたもの
+        extended_indices1 = [] # indices1[]をシャッフルしtaverage_repeat_size回繋げたもの
+                
         repeat_indices0 = []
         repeat_indices1 = []
         
         for i in range(average_repeat_size):
+            # indices0をシャッフルして繋げる
             extended_indices0.extend(np.random.permutation(indices0))
             repeat_indices0.extend([i] * len(indices0))
 
+            # indices1をシャッフルして繋げる
             extended_indices1.extend(np.random.permutation(indices1))
             repeat_indices1.extend([i] * len(indices1))
 
@@ -49,11 +57,38 @@ class Subject:
             
         self.averaging_indices0 = np.array(averaging_indices0, dtype=np.int32)
         self.averaging_indices1 = np.array(averaging_indices1, dtype=np.int32)
+
+        # 最終的にaveraging_repeat_indices0, 1は利用されていない
         self.averaging_repeat_indices0 = np.array(averaging_repeat_indices0, dtype=np.int32)
         self.averaging_repeat_indices1 = np.array(averaging_repeat_indices1, dtype=np.int32)
         
         self.subject_ids0 = [self.subject_id] * len(self.averaging_indices0)
         self.subject_ids1 = [self.subject_id] * len(self.averaging_indices1)
+
+    def process_unmatched(self):
+        alt_extended_indices0 = []
+        alt_extended_indices1 = []
+        
+        for i in range(self.average_repeat_size):
+            # indices0をシャッフルして繋げる
+            alt_extended_indices0.extend(np.random.permutation(self.indices0))
+
+            # indices1をシャッフルして繋げる
+            alt_extended_indices1.extend(np.random.permutation(self.indices1))
+
+        alt_averaging_indices0 = []
+        alt_averaging_indices1 = []
+
+        for i in range(len(alt_extended_indices0) // self.average_trial_size):
+            pos = i * self.average_trial_size
+            alt_averaging_indices0.append(alt_extended_indices0[pos:pos+self.average_trial_size])
+        
+        for i in range(len(alt_extended_indices1) // self.average_trial_size):
+            pos = i * self.average_trial_size
+            alt_averaging_indices1.append(alt_extended_indices1[pos:pos+self.average_trial_size])
+        
+        self.alt_averaging_indices0 = np.array(alt_averaging_indices0, dtype=np.int32)
+        self.alt_averaging_indices1 = np.array(alt_averaging_indices1, dtype=np.int32)
 
 
 class AveragingBehavior:
@@ -61,14 +96,18 @@ class AveragingBehavior:
                  classify_type,
                  indices0,
                  indices1,
+                 alt_indices0,
+                 alt_indices1,
                  repeat_indices0,
                  repeat_indices1,
                  subject_ids0,
                  subject_ids1):
                  
         self.classify_type  = classify_type
-        self.indices0        = indices0 # (*,3)
-        self.indices1        = indices1 # (*,3)
+        self.indices0        = indices0 # (*,average_trial_size)
+        self.indices1        = indices1 # (*,average_trial_size)
+        self.alt_indices0    = alt_indices0 # None or (*,average_trial_size)
+        self.alt_indices1    = alt_indices1 # None or (*,average_trial_size) 
         self.repeat_indices0 = repeat_indices0 # (*,)
         self.repeat_indices1 = repeat_indices1 # (*,)
         self.subject_ids0    = subject_ids0
@@ -76,7 +115,11 @@ class AveragingBehavior:
     
     @property
     def indices(self):
-        return np.concatenate([self.indices0, self.indices1], axis=0)
+        return np.concatenate([self.indices0, self.indices1], axis=0) # (*,average_trial_size)
+
+    @property
+    def alt_indices(self):
+        return np.concatenate([self.alt_indices0, self.alt_indices1], axis=0) # (*,average_trial_size)
 
     @property
     def repeat_indices(self):
@@ -116,13 +159,17 @@ class AveragingBehavior:
 def preprocess_average_behavior(behavior_data,
                                 classify_type,
                                 average_trial_size,
-                                average_repeat_size):
+                                average_repeat_size,
+                                unmatched):
+    """ 
+    Create AveragingBehavior class inscens.
+    """
     
-    categories     = behavior_data["category"]     # (3940),
-    sub_categories = behavior_data["sub_category"] # (3940),
-    subjects       = behavior_data["subject"]      # (3940),
+    categories     = behavior_data["category"]     # (17306),
+    sub_categories = behavior_data["sub_category"] # (17306),
+    subjects       = behavior_data["subject"]      # (17306),
 
-    subject_ids = np.unique(subjects)
+    subject_ids = np.unique(subjects) # (50),
 
     subject_objs = []
     
@@ -166,12 +213,27 @@ def preprocess_average_behavior(behavior_data,
                               average_repeat_size)
         subject_objs.append(subject_obj)
 
+    if unmatched:
+        for subject_obj in subject_objs:
+            subject_obj.process_unmatched()
+
     averaging_indices0 = np.concatenate(
         [subject_obj.averaging_indices0 for subject_obj in subject_objs],
-        axis=0) # (***, 3)
+        axis=0) # (***, average_trial_size)
     averaging_indices1 = np.concatenate(
         [subject_obj.averaging_indices1 for subject_obj in subject_objs],
-        axis=0) # (***, 3)
+        axis=0) # (***, average_trial_size)
+
+    if unmatched:
+        alt_averaging_indices0 = np.concatenate(
+            [subject_obj.alt_averaging_indices0 for subject_obj in subject_objs],
+            axis=0) # (***, average_trial_size)
+        alt_averaging_indices1 = np.concatenate(
+            [subject_obj.alt_averaging_indices1 for subject_obj in subject_objs],
+            axis=0) # (***, average_trial_size)
+    else:
+        alt_averaging_indices0 = None
+        alt_averaging_indices1 = None
 
     averaging_repeat_indices0 = np.concatenate(
         [subject_obj.averaging_repeat_indices0 for subject_obj in subject_objs],
@@ -190,6 +252,8 @@ def preprocess_average_behavior(behavior_data,
     averaging_behavior = AveragingBehavior(classify_type,
                                            averaging_indices0,
                                            averaging_indices1,
+                                           alt_averaging_indices0,
+                                           alt_averaging_indices1,
                                            averaging_repeat_indices0,
                                            averaging_repeat_indices1,
                                            subject_ids0,
@@ -202,10 +266,13 @@ def preprocess_average_eeg(dst_base,
                            average_trial_size,
                            average_repeat_size,
                            eeg_normalize_type,
-                           eeg_frame_type):
+                           eeg_frame_type,
+                           eeg_duration_type,
+                           unmatched):
     
     assert (eeg_normalize_type == "normal" or eeg_normalize_type == "pre" or eeg_normalize_type == "none")
     assert (eeg_frame_type == "normal" or eeg_frame_type == "filter" or eeg_frame_type == "ft")
+    assert (eeg_duration_type == "normal" or eeg_duration_type == "short" or eeg_duration_type == "long")
 
     print("processing eeg: classify_type={}".format(averaging_behavior.classify_type))
 
@@ -217,20 +284,35 @@ def preprocess_average_eeg(dst_base,
         # Append "_ft" to the end of the file name when using FT-spectrograms in EEG
         eeg_suffix = "_ft"
 
-    if eeg_normalize_type == "normal":
-        eeg_data_path_base = os.path.join(dst_base, "final_eeg_data{}".format(
-            eeg_suffix))
-    elif eeg_normalize_type == "pre":
-        eeg_data_path_base = os.path.join(dst_base, "final_eeg_data_pre{}".format(
-            eeg_suffix))
+    if eeg_duration_type == "short":
+        # Append "_short" for duration=0.5sec
+        duration_suffix = "_short"
+    elif eeg_duration_type == "long":
+        # Append "_long" for duration=1.5sec
+        duration_suffix = "_long"
     else:
-        eeg_data_path_base = os.path.join(dst_base, "final_eeg_data_none{}".format(
-            eeg_suffix))
+        duration_suffix = ""
+
+    if eeg_normalize_type == "normal":
+        eeg_data_path_base = os.path.join(dst_base, "final_eeg_data{}{}".format(
+            eeg_suffix, duration_suffix))
+    elif eeg_normalize_type == "pre":
+        eeg_data_path_base = os.path.join(dst_base, "final_eeg_data_pre{}{}".format(
+            eeg_suffix, duration_suffix))
+    else:
+        eeg_data_path_base = os.path.join(dst_base, "final_eeg_data_none{}{}".format(
+            eeg_suffix, duration_suffix))
         
     eeg_data_all = np.load(eeg_data_path_base + ".npz")
     eeg_datas = eeg_data_all["eeg_data"] # (3940, 63, 375) or (3940, 5, 63, 375)等
-    
-    indices = averaging_behavior.indices
+
+    if not unmatched:
+        # Normal averaging
+        indices = averaging_behavior.indices
+    else:
+        # For unmatched averaging
+        indices = averaging_behavior.alt_indices
+
     avaraging_eeg_datas = eeg_datas[indices] # (1053, 3, 5, 63, 375)
     mean_eeg_datas = avaraging_eeg_datas.mean(axis=1) # (1053, 5, 63, 375)
 
@@ -238,6 +320,10 @@ def preprocess_average_eeg(dst_base,
                                                 average_trial_size,
                                                 average_repeat_size,
                                                 averaging_behavior.classify_type)
+
+    if unmatched:
+        output_file_path = output_file_path + "_unmatched"
+        
     np.savez(output_file_path,
              eeg_data=mean_eeg_datas)
 
@@ -270,8 +356,11 @@ def preprocess_average_fmri(dst_base,
                             average_trial_size,
                             average_repeat_size,
                             fmri_frame_type,
-                            smooth):
+                            fmri_offset_tr,
+                            smooth,
+                            unmatched):
     assert (fmri_frame_type == "normal" or fmri_frame_type == "average" or fmri_frame_type == "three")
+    assert (fmri_offset_tr == 1 or fmri_offset_tr == 2 or fmri_offset_tr == 3)
 
     print("processing fmri: classify_type={}".format(averaging_behavior.classify_type))
 
@@ -289,15 +378,21 @@ def preprocess_average_fmri(dst_base,
         # Add "_nosmooth" to the end of the directory name when using non-smoothing data
         fmri_data_dir = fmri_data_dir + "_nosmooth"
 
+    if fmri_offset_tr != 2:
+        fmri_data_dir = fmri_data_dir + f"_tr{fmri_offset_tr}"
+
     input_fmri_data_dir = os.path.join(dst_base, fmri_data_dir)
     output_fmri_data_dir = os.path.join(dst_base, fmri_data_dir) + "_a{}_r{}_ct{}".format(
         average_trial_size,
         average_repeat_size,
         averaging_behavior.classify_type)
 
+    if unmatched:
+        output_fmri_data_dir = output_fmri_data_dir + "_unmatched"
+
     if not os.path.exists(output_fmri_data_dir):
         os.mkdir(output_fmri_data_dir)
-    
+
     averaging_indices = averaging_behavior.indices
     # e.g., (1053, 3)
 
@@ -320,6 +415,7 @@ def save_averaging_behavior_data(dst_base,
                                  averaging_behavior,
                                  average_trial_size,
                                  average_repeat_size,
+                                 unmatched,
                                  debug):
 
     file_name = "final_behavior_data_a{}_r{}_ct{}".format(
@@ -327,6 +423,8 @@ def save_averaging_behavior_data(dst_base,
         average_repeat_size,
         averaging_behavior.classify_type)
 
+    if unmatched:
+        file_name = file_name + '_unmatched'
     
     output_file_path = os.path.join(dst_base, file_name) # File name of npz
     if debug:
@@ -335,7 +433,7 @@ def save_averaging_behavior_data(dst_base,
     np.savez_compressed(output_file_path,
                         category=averaging_behavior.categories,
                         sub_category=averaging_behavior.sub_categories,
-                        repeat_index=averaging_behavior.repeat_indices,
+                        repeat_index=averaging_behavior.repeat_indices, # 最終的に利用されていない
                         subject=averaging_behavior.subject_ids)
 
 
@@ -357,10 +455,18 @@ def preprocess_average():
                         default="./data")
     parser.add_argument("--fmri_frame_type", type=str,
                         default="normal") # normal, avarage, three
+    parser.add_argument("--fmri_offset_tr", type=int,
+                        default=2) # 1,2,3
     parser.add_argument("--eeg_frame_type", type=str,
                         default="filter") # normal, filter, ft
+    parser.add_argument("--eeg_duration_type", type=str,
+                        default="normal") # "normal", "short", "long"
     parser.add_argument("--debug", type=strtobool,
                         default="false")
+    parser.add_argument("--unmatched", type=strtobool,
+                        default="false")
+    parser.add_argument("--classify_type", type=int,
+                        default=-1)
     args = parser.parse_args()
 
     # Data inport/export location
@@ -381,7 +487,12 @@ def preprocess_average():
             behavior_data,
             classify_type=ct,
             average_trial_size=args.average_trial_size,
-            average_repeat_size=args.average_repeat_size)
+            average_repeat_size=args.average_repeat_size,
+            unmatched=args.unmatched)
+
+        if args.classify_type != -1 and ct != args.classify_type:
+            # 明示的に処理するclassify_typeを指定している時で、対象外のclassify_typeの時はスキップ
+            continue
 
         if args.eeg:
             preprocess_average_eeg(dst_base,
@@ -389,7 +500,9 @@ def preprocess_average():
                                    average_trial_size=args.average_trial_size,
                                    average_repeat_size=args.average_repeat_size,
                                    eeg_normalize_type=args.eeg_normalize_type,
-                                   eeg_frame_type=args.eeg_frame_type)
+                                   eeg_frame_type=args.eeg_frame_type,
+                                   eeg_duration_type=args.eeg_duration_type,
+                                   unmatched=args.unmatched)
 
         if args.fmri:
             preprocess_average_fmri(dst_base,
@@ -397,13 +510,16 @@ def preprocess_average():
                                     average_trial_size=args.average_trial_size,
                                     average_repeat_size=args.average_repeat_size,
                                     fmri_frame_type=args.fmri_frame_type,
-                                    smooth=args.smooth)
+                                    fmri_offset_tr=args.fmri_offset_tr,
+                                    smooth=args.smooth,
+                                    unmatched=args.unmatched)
         
         # Save averaging behavior data
         save_averaging_behavior_data(dst_base,
                                      averaging_behavior,
                                      average_trial_size=args.average_trial_size,
                                      average_repeat_size=args.average_repeat_size,
+                                     unmatched=args.unmatched,
                                      debug=args.debug)
     
 if __name__ == '__main__':

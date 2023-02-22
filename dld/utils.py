@@ -70,7 +70,31 @@ def save_predictions(save_dir, classify_type, fold, labels, preds):
     f.writelines(lines)
     f.close()
 
+
+def save_pfi_result(save_dir, classify_type, mask_name,
+                    base_accuracies, importances):
+    """ Save the PFI results"""
+
+    average_importances = np.mean(importances, axis=1)
+    flat_importances = np.array(importances).ravel()
     
+    base_accuracies_str = ','.join(map(str,base_accuracies))
+    flat_importances_str = ','.join(map(str,flat_importances))
+    average_importances_str = ','.join(map(str,average_importances))
+    
+    lines = []
+    
+    lines.append(f'base_accuracy={base_accuracies_str}\n')
+    lines.append(f'importance={flat_importances_str}\n')
+    lines.append(f'average_importance={average_importances_str}')
+    
+    file_name = save_dir + f'/pfi_ct{classify_type}_{mask_name}.txt'
+    
+    f = open(file_name, "w")
+    f.writelines(lines)
+    f.close()
+    
+
 def get_test_subject_ids(test_subjects):
     """ Make a string of the test_subjects option into an ID array """
     if len(test_subjects) == 0:
@@ -97,4 +121,3 @@ def fix_run_seed(seed):
         cudnn.deterministic = True
         # Even if "benchmark = True" during "get_device()", it is False here
         #cudnn.benchmark = False
-        

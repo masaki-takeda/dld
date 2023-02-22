@@ -1,6 +1,9 @@
 import numpy as np
 import h5py
 
+# for small and long
+from scipy import io
+
 from behavior import Behavior
 
 # Prepare data for channel interpolation
@@ -149,29 +152,53 @@ class EEG(object):
     """ EEG data (for preprocess) """
 
     def __init__(self, src_base, behavior, normalize_type="normal",
-                 frame_type="normal"):
+                 frame_type="normal", duration_type="normal"):
         assert (normalize_type == "normal" or normalize_type == "pre" or normalize_type == "none")
         assert (frame_type == "normal" or frame_type == "filter" or frame_type == "ft")
-        # EEG data: from -0.5 to +1.0 seconds
+        assert (duration_type == "normal" or duration_type == "short" or duration_type == "long")
 
-        path_format = "{0}/EEG/Epoched/TM_{1}_{2:0>2}/TM_{1}_{2:0>2}_{3:0>2}_Segmentation.mat"
-
+        if duration_type == "short":
+            duration_suffix = "_500ms"
+        elif duration_type == "long":
+            duration_suffix = "_1500ms"
+        else:
+            duration_suffix = ""
+            
+        # EEG data:
+        #   short  = from -0.5 to +0.5 seconds
+        #   normal = from -0.5 to +1.0 seconds
+        #   long   = from -0.5 to +1.5 seconds
+        
+        path_format = "{0}/EEG/Epoched{4}/TM_{1}_{2:0>2}/TM_{1}_{2:0>2}_{3:0>2}_Segmentation.mat"
+        
         path = path_format.format(src_base,
                                   behavior.date,
                                   behavior.subject,
-                                  behavior.run)
-        
-        with h5py.File(path,'r') as f:
-            if frame_type == "normal":
-                eeg_data = np.array(f['EEG']['data'])        # (50, 375, 64)
-                eeg_data = np.transpose(eeg_data, [2, 1, 0]) # (64, 375, 50)
-            elif frame_type == "filter":
-                eeg_data = np.array(f['EEGfilt'])               # (5, 50, 5, 375, 64)
-                eeg_data = np.transpose(eeg_data, [3, 2, 1, 0]) # (64, 375, 50, 5)
+                                  behavior.run,
+                                  duration_suffix)
+
+        if duration_type == "short" or duration_type == "long":
+            # shortとlongは従来の形式だったのでworkaroundを入れる.
+            all_data = io.loadmat(path)
+            if frame_type == "filter":
+                # バンドパスフィルタを用いた場合
+                eeg_data = all_data['EEGfilt']
+                # (64, 250, 50, 5)
             else:
-                # For FT
-                eeg_data = np.array(f['FT_Specgram'])           # (50, 17, 163, 64)
-                eeg_data = np.transpose(eeg_data, [3, 2, 0, 1]) # (64, 163, 50, 17)
+                eeg_data = all_data['EEG']['data'][0][0]
+                # (64, 250, 50) = (channel, time, trial)
+        else:
+            with h5py.File(path,'r') as f:
+                if frame_type == "normal":
+                    eeg_data = np.array(f['EEG']['data'])        # (50, 375, 64)
+                    eeg_data = np.transpose(eeg_data, [2, 1, 0]) # (64, 375, 50)
+                elif frame_type == "filter":
+                    eeg_data = np.array(f['EEGfilt'])               # (5, 50, 5, 375, 64)
+                    eeg_data = np.transpose(eeg_data, [3, 2, 1, 0]) # (64, 375, 50, 5)
+                else:
+                    # For FT
+                    eeg_data = np.array(f['FT_Specgram'])           # (50, 17, 163, 64)
+                    eeg_data = np.transpose(eeg_data, [3, 2, 0, 1]) # (64, 163, 50, 17)
             
         ch_indices = []
         for i in range(64):

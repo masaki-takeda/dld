@@ -30,10 +30,14 @@ def get_common_parser():
                         default="normal") # "normal", "pre" or "none"
     parser.add_argument("--fmri_frame_type", type=str, # "normal", "avarage", "three"
                         default="normal")
+    parser.add_argument("--fmri_offset_tr", type=int,
+                        default=2) # 1,2,3
     parser.add_argument("--gpu", type=int,
                         default=-1)
     parser.add_argument("--eeg_frame_type", type=str,
                         default="filter") # "normal", "filter", "ft"
+    parser.add_argument("--eeg_duration_type", type=str,
+                        default="normal") # "normal", "short", "long"
     # Whether to use smoothed fMRI data
     parser.add_argument("--smooth", type=strtobool,
                         default="true")
@@ -59,6 +63,8 @@ def get_common_parser():
                         default=63) # Number of the output channels for TCN
     parser.add_argument("--residual", type=strtobool,
                         default="true")
+    parser.add_argument("--unmatched", type=strtobool,
+                        default="false")
     parser.add_argument("--debug", type=strtobool,
                         default="false")
     return parser
@@ -91,6 +97,10 @@ def get_fmri_args():
                         default=0.0)
     parser.add_argument("--epochs", type=int,
                         default=100)
+    parser.add_argument("--fmri_mask", type=str,
+                        default=None)
+    parser.add_argument("--pfi_shuffle_size", type=int,
+                        default=0)
     args = parser.parse_args()
     return args
 
@@ -167,13 +177,17 @@ def get_grad_cam_args():
     parser.add_argument("--kernel_size", type=int,
                         default=3) # The kernel size for STNN and TCN
     parser.add_argument("--level_size", type=int,
-                        default=-1) # The level size for TCN
+                        default=-1) # The level size for TCN # TCN用のレベルサイズ
     parser.add_argument("--level_hidden_size", type=int,
                         default=63) # Number of the output channels for TCN
     parser.add_argument("--residual", type=strtobool,
                         default="true")
     parser.add_argument("--debug", type=strtobool,
                         default="false")
+    parser.add_argument("--combined_hidden_size", type=int,
+                        default=128)
+    parser.add_argument("--combined_layer_size", type=int,
+                        default=0)
     args = parser.parse_args()
     return args
 
@@ -189,7 +203,7 @@ def save_args(args):
     time_str = dt.now().strftime('# %Y-%m-%d %H:%M')
     lines.append("{}\n".format(time_str))
     args_str = str(args)
-    # Strip the head "Namespace" string
+    # Strip head "Namespace" string
     args_str = re.sub(r'^Namespace\(', '', args_str)
     args_str = re.sub(r'\)$', '', args_str)
     

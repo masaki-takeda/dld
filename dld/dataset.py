@@ -36,74 +36,9 @@ EEG_FRAME_TYPE_NORMAL = 0
 EEG_FRAME_TYPE_FILTER = 1
 EEG_FRAME_TYPE_FT     = 2
 
-
-# Enter True if mask is used
-DEBUG_USE_EEG_MASK = False
-
-# Channel numbers for the mask
-CH_Fp1  = 0
-CH_Fp2  = 1
-CH_F3   = 2
-CH_F4   = 3
-CH_C3   = 4
-CH_C4   = 5
-CH_P3   = 6
-CH_P4   = 7
-CH_O1   = 8
-CH_O2   = 9
-CH_F7   = 10
-CH_F8   = 11
-CH_T7   = 12
-CH_T8   = 13
-CH_P7   = 14
-CH_P8   = 15
-CH_Fz   = 16
-CH_Cz   = 17
-CH_Pz   = 18
-CH_Oz   = 19
-CH_FC1  = 20
-CH_FC2  = 21
-CH_CP1  = 22
-CH_CP2  = 23
-CH_FC5  = 24
-CH_FC6  = 25
-CH_CP5  = 26
-CH_CP6  = 27
-CH_TP9  = 28
-CH_TP10 = 29
-CH_POz  = 30
-CH_F1   = 31
-CH_F2   = 32
-CH_C1   = 33
-CH_C2   = 34
-CH_P1   = 35
-CH_P2   = 36
-CH_AF3  = 37
-CH_AF4  = 38
-CH_FC3  = 39
-CH_FC4  = 40
-CH_CP3  = 41
-CH_CP4  = 42
-CH_PO3  = 43
-CH_PO4  = 44
-CH_F5   = 45
-CH_F6   = 46
-CH_C5   = 47
-CH_C6   = 48
-CH_P5   = 49
-CH_P6   = 50
-CH_AF7  = 51
-CH_AF8  = 52
-CH_FT7  = 53
-CH_FT8  = 54
-CH_TP7  = 55
-CH_TP8  = 56
-CH_PO7  = 57
-CH_PO8  = 58
-CH_FT9  = 59
-CH_FT10 = 60
-CH_Fpz  = 61
-CH_CPz  = 62
+EEG_DURATION_TYPE_NORMAL = 0
+EEG_DURATION_TYPE_SHORT  = 1
+EEG_DURATION_TYPE_LONG   = 2
 
 
 class BrainDataset(Dataset):
@@ -115,14 +50,19 @@ class BrainDataset(Dataset):
                  use_eeg=False,
                  data_dir="./data",
                  fmri_frame_type="normal",
+                 fmri_offset_tr=2,
                  eeg_normalize_type="normal",
                  eeg_frame_type="normal",
+                 eeg_duration_type="normal",
                  use_smooth=True,
                  average_trial_size=0,
                  average_repeat_size=0,
                  fold=0,
                  test_subjects=[],
                  subjects_per_fold=4,
+                 unmatched=False,
+                 fmri_mask_name=None,
+                 pfi_seed=None,
                  debug=False):
         """
         use_fmri:
@@ -151,8 +91,10 @@ class BrainDataset(Dataset):
 
         assert (data_type == DATA_TYPE_TRAIN or data_type == DATA_TYPE_VALIDATION or data_type == DATA_TYPE_TEST)
         assert (fmri_frame_type == "normal" or fmri_frame_type == "average" or fmri_frame_type == "three")
+        assert (fmri_offset_tr == 1 or fmri_offset_tr == 2 or fmri_offset_tr == 3)
         assert (eeg_normalize_type == "normal" or eeg_normalize_type == "pre" or eeg_normalize_type == "none")
         assert (eeg_frame_type == "normal" or eeg_frame_type == "filter" or eeg_frame_type == "ft")
+        assert (eeg_duration_type == "normal" or eeg_duration_type == "short" or eeg_duration_type == "long")
 
         print("fmri frame type={}, eeg normalize type={}, eeg frame type={}".format(
             fmri_frame_type, eeg_normalize_type, eeg_frame_type))
@@ -163,7 +105,9 @@ class BrainDataset(Dataset):
             self.fmri_frame_type = FMRI_FRAME_TYPE_AVERAGE
         else:
             self.fmri_frame_type = FMRI_FRAME_TYPE_THREE
-
+        
+        self.fmri_offset_tr = fmri_offset_tr
+        
         if eeg_normalize_type == "normal":
             self.eeg_normalize_type = EEG_NORMALIZE_TYPE_NORMAL
         elif eeg_normalize_type == "pre":
@@ -178,6 +122,13 @@ class BrainDataset(Dataset):
         else:
             self.eeg_frame_type = EEG_FRAME_TYPE_FT
 
+        if eeg_duration_type == "normal":
+            self.eeg_duration_type = EEG_DURATION_TYPE_NORMAL
+        elif eeg_duration_type == "short":
+            self.eeg_duration_type = EEG_DURATION_TYPE_SHORT
+        else:
+            self.eeg_duration_type = EEG_DURATION_TYPE_LONG
+
         if average_trial_size > 0:
             self.use_trial_average = True
         else:
@@ -185,33 +136,44 @@ class BrainDataset(Dataset):
 
         if self.use_eeg:
             # Loading EEG data
-            eeg_suffix = ""
+            eeg_frame_type_suffix = ""
             if self.eeg_frame_type == EEG_FRAME_TYPE_FILTER:
                 # When using filters in EEG, "_filter" is added to the file name
-                eeg_suffix = "_filter"
+                eeg_frame_type_suffix = "_filter"
             elif self.eeg_frame_type == EEG_FRAME_TYPE_FT:
                 # When using FT_spectrogram in EEG, "_ft" is added to the file name
-                eeg_suffix = "_ft"
+                eeg_frame_type_suffix = "_ft"
+
+            eeg_duration_type_suffix = ""
+            if self.eeg_duration_type == EEG_DURATION_TYPE_LONG:
+                eeg_duration_type_suffix = "_long"
+            elif self.eeg_duration_type == EEG_DURATION_TYPE_SHORT:
+                eeg_duration_type_suffix = "_short"
 
             if self.eeg_normalize_type == EEG_NORMALIZE_TYPE_NORMAL:
-                eeg_data_path = os.path.join(self.data_dir, "final_eeg_data{}".format(
-                    eeg_suffix))
+                eeg_data_path = os.path.join(self.data_dir, "final_eeg_data{}{}".format(
+                    eeg_frame_type_suffix, eeg_duration_type_suffix))
             elif self.eeg_normalize_type == EEG_NORMALIZE_TYPE_PRE:
-                eeg_data_path = os.path.join(self.data_dir, "final_eeg_data_pre{}".format(
-                    eeg_suffix))
+                eeg_data_path = os.path.join(self.data_dir, "final_eeg_data_pre{}{}".format(
+                    eeg_frame_type_suffix, eeg_duration_type_suffix))
             else:
-                eeg_data_path = os.path.join(self.data_dir, "final_eeg_data_none{}".format(
-                    eeg_suffix))
+                eeg_data_path = os.path.join(self.data_dir, "final_eeg_data_none{}{}".format(
+                    eeg_frame_type_suffix, eeg_duration_type_suffix))
 
             if self.use_trial_average:
                 # For using trial average
                 eeg_data_path = eeg_data_path + "_a{}_r{}_ct{}".format(average_trial_size,
                                                                        average_repeat_size,
                                                                        classify_type)
+                if unmatched:
+                    eeg_data_path = eeg_data_path + "_unmatched"
+                
             eeg_data_path = eeg_data_path + ".npz"
             
             eeg_data_all = np.load(eeg_data_path)
             eeg_datas = eeg_data_all["eeg_data"] # e.g., (3940, 63, 375) or (3940, 5, 63, 375)...
+
+            print(f"eeg_data_path : {eeg_data_path}")
             
             self.eeg_datas = eeg_datas
 
@@ -231,14 +193,21 @@ class BrainDataset(Dataset):
                 # When non-smoothing data is used, "_nosmooth" is appended to the end of the directory name
                 fmri_data_dir = fmri_data_dir + "_nosmooth"
 
+            if self.fmri_offset_tr != 2:
+                fmri_data_dir = fmri_data_dir + f"_tr{self.fmri_offset_tr}"
+
             if self.use_trial_average:
                 # For using trial averaged data
                 fmri_data_dir = fmri_data_dir + "_a{}_r{}_ct{}".format(
                     average_trial_size,
                     average_repeat_size,
                     classify_type)
+                if unmatched:
+                    fmri_data_dir = fmri_data_dir + "_unmatched"
             
             self.fmri_data_dir = os.path.join(self.data_dir, fmri_data_dir)
+
+            print(f"fmri_data_dir : {self.fmri_data_dir}")
             
         # The method used is to store all data as it is and change only the indexes
         
@@ -248,17 +217,19 @@ class BrainDataset(Dataset):
         if self.use_trial_average:
             behavior_data_path = behavior_data_path + "_a{}_r{}_ct{}".format(
                 average_trial_size, average_repeat_size, classify_type)
+            if unmatched:
+                behavior_data_path = behavior_data_path + "_unmatched"
+            
         if debug:
             behavior_data_path = behavior_data_path + "_debug"
+
+        print(f"behavior_data_path : {behavior_data_path}.npz")
         
         behavior_data_all = np.load(behavior_data_path + ".npz")
         
         categories     = behavior_data_all["category"]     # (3940),
         sub_categories = behavior_data_all["sub_category"] # (3940),
         subjects       = behavior_data_all["subject"]      # (3940),
-
-        #if self.use_trial_average:
-        #    self.average_repeat_indices = behavior_data_all["repeat_index"]
 
         unique_subjects = np.unique(behavior_data_all['subject'])
         unique_subjects = np.sort(unique_subjects)
@@ -345,26 +316,32 @@ class BrainDataset(Dataset):
             np.random.shuffle(indices)
         self.indices = indices
 
-        if DEBUG_USE_EEG_MASK:
-            # Examples of EEG masks
-            # When masking other than FT8 and FT10
-            eeg_non_mask_channel_indices = [CH_FT8, CH_FT10]
-            if self.eeg_frame_type == EEG_FRAME_TYPE_FILTER:
-                # For using filter
-                self.eeg_mask = np.zeros([5, 63, 250], dtype=np.float32)
-                for index in eeg_non_mask_channel_indices:
-                    self.eeg_mask[:,index,:] = 1.0
-            elif self.eeg_frame_type == EEG_FRAME_TYPE_FT:
-                self.eeg_mask = np.zeros([17, 63, 125], dtype=np.float32)
-                for index in eeg_non_mask_channel_indices:
-                    self.eeg_mask[:,index,:] = 1.0
+        # fMRI Masking
+        self.fmri_org_mask = None
+        self.fmri_shuffle_mask = None
+        self.shuffled_indices = None
+        
+        if fmri_mask_name is not None:
+            mask_path = os.path.join(os.path.dirname(__file__),
+                                     f'experiment_data/mask_{fmri_mask_name}.npz')
+            mask_data = np.load(mask_path)['mask']
+            # (79, 95, 79)
+            mask_data = mask_data[np.newaxis,:,:,:]
+            # (1, 79, 95, 79)
+            
+            print(f'fmri mask loaded: {mask_path}')
+            
+            if pfi_seed is not None:
+                # fMRI Mask for for permutation feature importance
+                self.fmri_org_mask = 1.0 - mask_data
+                self.fmri_shuffle_mask = mask_data
+                
+                rng = np.random.default_rng(pfi_seed)
+                self.shuffled_indices = rng.permutation(self.indices)
             else:
-                # For normal
-                self.eeg_mask = np.zeros([63, 250], dtype=np.float32)
-                for index in eeg_non_mask_channel_indices:
-                    self.eeg_mask[index,:] = 1.0
-        
-        
+                # fMRI Mask for input masking
+                self.fmri_org_mask = mask_data
+
     def get_indices(self, classify_type, categories, sub_categories, trial_mask, for_test):
         if classify_type == FACE_OBJECT:
             # Index array of Face
@@ -398,14 +375,6 @@ class BrainDataset(Dataset):
                           (sub_categories == SUBCATEGORY_NATURAL),
                           (trial_mask == True))]
 
-        """
-        if for_test and self.use_trial_average:
-            # Only at the beginning of repeat
-            flags_repeat0 = self.average_repeat_indices == 0
-            flags0 = flags0 & flags_repeat0
-            flags1 = flags1 & flags_repeat0
-        """
-        
         all_indices0 = np.where(flags0)[0]
         all_indices1 = np.where(flags1)[0]
         return all_indices0, all_indices1
@@ -443,16 +412,24 @@ class BrainDataset(Dataset):
                 # For normal
                 eeg_data = eeg_data[:,125:] # Excluding from -0.5 seconds to 0 seconds # (63, 250)
 
-            if DEBUG_USE_EEG_MASK:
-                # When masking
-                eeg_data = eeg_data * self.eeg_mask
-
             sample.update( {
                 'eeg_data': eeg_data,
             })
         
         if self.use_fmri:
             fmri_data = self.load_fmri_frame_data(real_index)
+
+            if self.fmri_org_mask is not None:
+                # Mask fMRI input
+                fmri_data = self.fmri_org_mask * fmri_data
+                
+            if self.fmri_shuffle_mask is not None:
+                # For pemutation feature importance shuffling
+                real_shuffled_index = self.shuffled_indices[index]
+                shuffled_fmri_data = self.load_fmri_frame_data(real_shuffled_index)
+                shuffled_masked_fmri_data = shuffled_fmri_data * self.fmri_shuffle_mask
+                fmri_data = fmri_data + shuffled_masked_fmri_data
+            
             sample.update( {
                 'fmri_data' : fmri_data
             })

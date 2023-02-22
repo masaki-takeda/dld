@@ -15,6 +15,7 @@ from options import get_grad_cam_args
 from utils import get_device, fix_state_dict, save_result, get_test_subject_ids
 from utils import sigmoid
 from guided_bp import GuidedBackprop
+from grad_cam import get_fmri_grad_cam_sub
 
 
 DEBUGGING = False
@@ -42,24 +43,7 @@ def get_fmri_grad_cam(model, data, label):
     cam_grads    = model.get_cam_gradients() # (1, 32, 6, 7, 6)
     cam_features = model.get_cam_features()  # (1, 32, 6, 7, 6)
 
-    f_cam_grad = cam_grads.cpu().numpy()[0] # (32, 6, 7, 6)
-    f_feature  = cam_features.data.cpu().numpy()[0] # (32, 6, 7, 6)
-
-    # Take the average of the gradients of 6x7x6 voxels
-    f_weights = np.mean(f_cam_grad, axis=(1,2,3)) # (32,)
-
-    # Grad-CAM calculated with global-pooling as described in the original paper
-    f_cam_org = np.zeros(f_feature.shape[1:], dtype = np.float32) # (6, 7, 6)
-    for i, w in enumerate(f_weights):
-        # Find the weighted sum of 32 (6,7,6) voxels
-        f_cam_org += w * f_feature[i, :, :, :]
-        
-    # Grad-CAM calculated without global-pooling
-    # Sum of 32 channels of element-wise products of (32,6,7,6) and (32,7,6,7)
-    f_cam_nopool = np.sum(f_cam_grad * f_feature, axis=0) # (6, 7, 6)
-
-    f_cam_org    = np.maximum(f_cam_org,    0)    
-    f_cam_nopool = np.maximum(f_cam_nopool, 0)
+    f_cam_org, f_cam_nopool = get_fmri_grad_cam_sub(cam_grads, cam_features)
 
     return f_cam_org, f_cam_nopool, predicted_label, predicted_prob
 

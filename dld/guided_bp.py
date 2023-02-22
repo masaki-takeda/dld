@@ -80,6 +80,40 @@ class GuidedBackprop():
         
         return gradients_array, predicted_prob
 
+    def generate_gradients_for_combined(self, input_image_f, input_image_e, label, device):
+        # Execute forward pass
+        input_image_f = input_image_f.detach().clone()
+        input_image_f.requires_grad = True
+
+        input_image_e = input_image_e.detach().clone()
+        input_image_e.requires_grad = True
+
+        # Get output up to the point of logits
+        model_output = self.model.forward_raw(input_image_f, input_image_e)
+        predicted_prob = torch.sigmoid(model_output)[0][0].cpu().detach().numpy()
+        
+        # Zero initialize gradient
+        self.model.zero_grad()
+        
+        # Set targets
+        output = torch.FloatTensor(1, model_output.size()[-1]).to(device).zero_()
+        # (1,1)
+        
+        if label == 1:
+            output[0][0] = 1
+        else:
+            output[0][0] = -1
+        
+        # Execute backward pass
+        model_output.backward(gradient=output)
+        
+        # Convert torch tensor to numpy array
+        # Get in [0] to eliminate the dimension of batch
+        gradients_array_f = input_image_f.grad.cpu().numpy()[0]
+        gradients_array_e = input_image_e.grad.cpu().numpy()[0]
+        
+        return gradients_array_f, gradients_array_e, predicted_prob
+
     def clear(self):
         # Clear hook
         for handle in self.hook_handles:

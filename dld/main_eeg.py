@@ -137,11 +137,13 @@ def train_fold(args, classify_type, fold):
                                            data_dir=args.data_dir,
                                            eeg_normalize_type=args.eeg_normalize_type,
                                            eeg_frame_type=args.eeg_frame_type,
+                                           eeg_duration_type=args.eeg_duration_type,
                                            average_trial_size=args.average_trial_size,
                                            average_repeat_size=args.average_repeat_size,
                                            fold=fold,
                                            test_subjects=test_subject_ids,
                                            subjects_per_fold=args.subjects_per_fold,
+                                           unmatched=args.unmatched,
                                            debug=args.debug),
                               batch_size=args.batch_size,
                               shuffle=True,
@@ -154,11 +156,13 @@ def train_fold(args, classify_type, fold):
                                                 data_dir=args.data_dir,
                                                 eeg_normalize_type=args.eeg_normalize_type,
                                                 eeg_frame_type=args.eeg_frame_type,
+                                                eeg_duration_type=args.eeg_duration_type,
                                                 average_trial_size=args.average_trial_size,
                                                 average_repeat_size=args.average_repeat_size,
                                                 fold=fold,
                                                 test_subjects=test_subject_ids,
                                                 subjects_per_fold=args.subjects_per_fold,
+                                                unmatched=args.unmatched,
                                                 debug=args.debug),
                              batch_size=args.batch_size,
                              shuffle=True,
@@ -170,7 +174,7 @@ def train_fold(args, classify_type, fold):
     
     model = get_eeg_model(args.model_type, args.parallel,
                           args.kernel_size, args.level_size, args.level_hidden_size,
-                          args.residual, device)
+                          args.residual, args.eeg_duration_type, device)
     
     optimizer = optim.Adam(model.parameters(),
                           lr=args.lr,
@@ -273,11 +277,13 @@ def test_fold(args, classify_type, fold):
                                           data_dir=args.data_dir,
                                           eeg_normalize_type=args.eeg_normalize_type,
                                           eeg_frame_type=args.eeg_frame_type,
+                                          eeg_duration_type=args.eeg_duration_type,
                                           average_trial_size=args.average_trial_size,
                                           average_repeat_size=args.average_repeat_size,
                                           fold=fold,
                                           test_subjects=test_subject_ids,
                                           subjects_per_fold=args.subjects_per_fold,
+                                          unmatched=args.unmatched,
                                           debug=args.debug),
                              batch_size=args.batch_size,
                              shuffle=False,
@@ -289,7 +295,7 @@ def test_fold(args, classify_type, fold):
 
     model = get_eeg_model(args.model_type, args.parallel,
                           args.kernel_size, args.level_size, args.level_hidden_size,
-                          args.residual, device)
+                          args.residual, args.eeg_duration_type, device)
     
     model_path  = "{}/model_ct{}_{}.pt".format(args.save_dir, classify_type, fold)
     state = torch.load(model_path, device)

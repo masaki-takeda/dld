@@ -8,6 +8,8 @@ from dataset import CATEGORY_FACE, CATEGORY_OBJECT, SUBCATEGORY_MALE, SUBCATEGOR
 
 class PreprocessAverageTest(unittest.TestCase):
     def test_subject(self):
+        np.random.seed(0)
+        
         indices0 = [0, 1, 2, 3]
         indices1 = [10, 11, 12, 13, 14]
 
@@ -19,8 +21,8 @@ class PreprocessAverageTest(unittest.TestCase):
                               average_trial_size=3,
                               average_repeat_size=4)
 
-        self.assertEqual(subject_obj.averaging_indices0.shape, (5, 3)) # (4*4) // 3
-        self.assertEqual(subject_obj.averaging_indices1.shape, (6, 3)) # (5*4) // 3
+        self.assertEqual(subject_obj.averaging_indices0.shape, (5, 3)) # (4*4) // 3 = 5
+        self.assertEqual(subject_obj.averaging_indices1.shape, (6, 3)) # (5*4) // 3 = 6
 
         np.testing.assert_array_equal(subject_obj.averaging_repeat_indices0,
                                       np.array([0, 1, 2, 2, 3], dtype=np.int32))
@@ -29,6 +31,14 @@ class PreprocessAverageTest(unittest.TestCase):
 
         self.assertEqual(len(subject_obj.subject_ids0), 5)
         self.assertEqual(len(subject_obj.subject_ids1), 6)
+
+        subject_obj.process_unmatched()
+
+        print(subject_obj.averaging_indices0)
+        print(subject_obj.alt_averaging_indices0)
+
+        print(subject_obj.averaging_indices1)
+        print(subject_obj.alt_averaging_indices1)
 
         
     def test_averaging_behavior(self):
@@ -45,6 +55,8 @@ class PreprocessAverageTest(unittest.TestCase):
         averaging_behavior_ct0 = AveragingBehavior(classify_type=FACE_OBJECT,
                                                    indices0=indices0,
                                                    indices1=indices1,
+                                                   alt_indices0=None,
+                                                   alt_indices1=None,
                                                    repeat_indices0=repeat_indices0,
                                                    repeat_indices1=repeat_indices1,
                                                    subject_ids0=subject_ids0,
@@ -68,6 +80,8 @@ class PreprocessAverageTest(unittest.TestCase):
         averaging_behavior_ct1 = AveragingBehavior(classify_type=MALE_FEMALE,
                                                    indices0=indices0,
                                                    indices1=indices1,
+                                                   alt_indices0=None,
+                                                   alt_indices1=None,
                                                    repeat_indices0=repeat_indices0,
                                                    repeat_indices1=repeat_indices1,
                                                    subject_ids0=subject_ids0,
@@ -91,6 +105,8 @@ class PreprocessAverageTest(unittest.TestCase):
         averaging_behavior_ct2 = AveragingBehavior(classify_type=ARTIFICIAL_NATURAL,
                                                    indices0=indices0,
                                                    indices1=indices1,
+                                                   alt_indices0=None,
+                                                   alt_indices1=None,
                                                    repeat_indices0=repeat_indices0,
                                                    repeat_indices1=repeat_indices1,
                                                    subject_ids0=subject_ids0,

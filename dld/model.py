@@ -782,7 +782,14 @@ class CombinedFilterModel(nn.Module):
         return (self.fmri_grad_extractor.feature, self.eeg_grad_extractor.feature)
 
 
-def get_eeg_model(model_type, parallel, kernel_size, level_size, level_hidden_size, use_residual, device):
+def get_eeg_model(model_type,
+                  parallel,
+                  kernel_size,
+                  level_size,
+                  level_hidden_size,
+                  use_residual,
+                  duration_type,
+                  device):
     if model_type == "model1":
         print("using model1")
         model = EEGModel().to(device)
@@ -819,9 +826,12 @@ def get_eeg_model(model_type, parallel, kernel_size, level_size, level_hidden_si
         model = EEGTCNModel(kernel_size=kernel_size,
                             level_size=level_size,
                             level_hidden_size=level_hidden_size,
-                            use_residual=use_residual).to(device)
+                            use_residual=use_residual,
+                            duration_type=duration_type).to(device)
     elif model_type == "tcn2":
         print("using tcn model2")
+        assert duration_type == "normal"
+        
         model = EEGTCNModel2(kernel_size=kernel_size,
                              level_size=level_size,
                              level_hidden_size=level_hidden_size,

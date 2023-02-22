@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn.utils import weight_norm
 
-from model_utils import Flatten, fix_module
+from model_utils import GradExtractor, Flatten, fix_module
 
 
 class Chomp1d(nn.Module):
@@ -353,15 +353,30 @@ def calc_coverage_length_with_level(kernel_size, level_size):
         dilation_sizes.append(dilation_size)        
     coverage_length = calc_coverage_length(kernel_size, dilation_sizes)    
     return coverage_length
+
+
+def get_frame_size_with_duration_type(duration_type):
+    if duration_type == "normal":
+        frame_size = 250
+    elif duration_type == "short":
+        frame_size = 125
+    elif duration_type == "long":
+        frame_size = 375
+    else:
+        assert False
+    return frame_size
     
 
-def calc_required_level(kernel_size):
+def calc_required_level(kernel_size, duration_type="normal"):
     """ Calculate the number of levels required according to the kernel size """
+    frame_size = get_frame_size_with_duration_type(duration_type)
+    
     max_level = 100
     for i in range(max_level):
         coverage_length = calc_coverage_length_with_level(kernel_size, i)
-        if coverage_length >= 250:
-            print("Required level_size={} for kernel_size={}".format(i, kernel_size))
+        if coverage_length >= frame_size:
+            print("Required level_size={} for kernel_size={} (duration_type={}, frame_size={})".format(
+                i, kernel_size, duration_type, frame_size))
             return i
     return None
 
@@ -372,10 +387,13 @@ class EEGTCNModelSub(nn.Module):
                  num_channels,
                  kernel_size,
                  dropout,
-                 use_residual):
+                 use_residual,
+                 duration_type):
         super(EEGTCNModelSub, self).__init__()
         
         self.linear = nn.Linear(num_channels[-1], 1)
+        
+        # TODO: ここから
         
         layers = []
         num_levels = len(num_channels)
@@ -401,7 +419,10 @@ class EEGTCNModelSub(nn.Module):
         
         coverage_length = calc_coverage_length(kernel_size, dilation_sizes)
         print("TCN coverage_length={}".format(coverage_length))
-        if coverage_length < 250:
+
+        frame_size = get_frame_size_with_duration_type(duration_type)
+        
+        if coverage_length < frame_size:
             print("[WARNING] coverage length is shorter than total EEG sequence length: {}",
                   coverage_length)
         
@@ -426,11 +447,14 @@ class EEGTCNModelSub(nn.Module):
         y1 = self.network(x)
         return y1[:,:,-1]
 
-    def forward_grad_cam(self, x):
+    def forward_grad_cam(self, x, for_combined=False):
         h = x
         for i,layer in enumerate(self.layers):
             h = layer.forward_grad_cam(h)
-        h = self.linear(h[:,:,-1])
+        if not for_combined:
+            h = self.linear(h[:,:,-1])
+        else:
+            h = h[:,:,-1]
         return h
 
 
@@ -498,19 +522,21 @@ class EEGTCNModel(nn.Module):
                  level_size=7,
                  level_hidden_size=63,
                  dropout=0.2,
-                 use_residual=True):
+                 use_residual=True,
+                 duration_type="normal"):
         
         super(EEGTCNModel, self).__init__()
 
         if level_size < 0:
             # Automatically calculate the optimal level
-            level_size = calc_required_level(kernel_size)
+            level_size = calc_required_level(kernel_size, duration_type)
         
         num_channels=[level_hidden_size] * level_size
         self.eeg_net = EEGTCNModelSub(num_channels=num_channels,
                                       kernel_size=kernel_size,
                                       dropout=dropout,
-                                      use_residual=use_residual)
+                                      use_residual=use_residual,
+                                      duration_type=duration_type)
         
     def forward(self, x):
         h = self.eeg_net(x)
@@ -626,7 +652,8 @@ class CombinedTCNModel(nn.Module):
         self.eeg_net = EEGTCNModelSub(num_channels=num_channels,
                                       kernel_size=kernel_size,
                                       dropout=dropout,
-                                      use_residual=use_residual)
+                                      use_residual=use_residual,
+                                      duration_type="normal")
 
         combined_layers = []
         combined_layers += [nn.Linear(in_features=128 + level_hidden_size,
@@ -666,6 +693,10 @@ class CombinedTCNModel(nn.Module):
         fix_module(self.eeg_net)
     
     def forward(self, x_fmri, x_eeg):
+        h = self.forward_raw(x_fmri, x_eeg)
+        return torch.sigmoid(h)
+
+    def forward_raw(self, x_fmri, x_eeg):
         h0 = self.fmri_net(x_fmri)
         # (batch_size, 128)
         # Call "forward_for_combined()" instead of "forward()" to prevent passing the last linear 
@@ -673,33 +704,72 @@ class CombinedTCNModel(nn.Module):
         # (batch_size, 63)
         h = torch.cat([h0, h1], dim=1)
         h = self.output(h)
-        return torch.sigmoid(h)
+        return h
+
+    def forward_grad_cam(self, x_fmri, x_eeg):
+        self.fmri_grad_extractor = GradExtractor()
+        h0 = self.fmri_grad_extractor.forward(self.fmri_net, x_fmri, '8')
+        # Relu() after [8]=Conv3d
+        # (batch_size, 128)
+        
+        # Use "for_combined" to prevent passing the last linear
+        h1 = self.eeg_net.forward_grad_cam(x_eeg, for_combined=True)
+        # (batch_size, 63)
+        
+        h = torch.cat([h0, h1], dim=1)
+        h = self.output(h)
+        return h
+
+    def get_cam_gradients(self):
+        fmri_grad = self.fmri_grad_extractor.grad
+        eeg_grads = []
+        for layer in self.eeg_net.layers:
+            eeg_grads.append(layer.grad)
+        return [fmri_grad, eeg_grads]
+
+    def get_cam_features(self):
+        fmri_feature = self.fmri_grad_extractor.feature
+        eeg_features = []
+        for layer in self.eeg_net.layers:
+            eeg_features.append(layer.feature)
+        return [fmri_feature, eeg_features]
+
+    def clear_grad_cam(self):
+        self.eeg_net.clear_grad_cam()
 
 
 if __name__ == '__main__':
     # Debug code
     
     input_channel  = 63  # EEG channel (original 64)
-    input_length   = 250 # Time-series length  (original 128)
+    
+    input_length   = 250 # Time-series length
+    duration_type = "normal"
+    
+    #input_length   = 125 # Time-series length
+    #duration_type = "short"
+
+    #input_length   = 375 # Time-series length
+    #duration_type = "long"
+    
     output_channel = 1
     
     kernel_size = 2
-    batch_size = 10
+    batch_size = 1
 
     level_size = -1
     level_hidden_size = 63
-    use_residual = False
+    use_residual = True
     
     # EEG data
     x_eeg = torch.randn(batch_size, input_channel, input_length)
 
+    """
     model = EEGTCNModel(kernel_size=kernel_size,
                         level_size=level_size,
                         level_hidden_size=level_hidden_size,
-                        use_residual=use_residual)
-
-    #out = model(x_eeg)
-    #print(out.shape) # (10, 1)
+                        use_residual=use_residual,
+                        duration_type=duration_type)
 
     out = model.forward_grad_cam(x_eeg)
     torch.sum(out).backward()
@@ -707,20 +777,37 @@ if __name__ == '__main__':
     print(model.get_cam_features()[1].shape)
     print(model.get_cam_gradients()[1].shape)
     model.clear_grad_cam()
-
     """
+
     x_fmri = torch.ones(batch_size, 1, 79, 95, 79)
     
     model = CombinedTCNModel(fmri_ch_size=1,
                              kernel_size=kernel_size,
                              level_size=level_size,
                              level_hidden_size=level_hidden_size)
+
+    model.eval()
+    model.zero_grad()
     
-    out = model(x_fmri, x_eeg)
+    out = model.forward_grad_cam(x_fmri, x_eeg)
     print(out.shape) # (10, 1)
 
-    model.fix_preloads()
+    out = torch.sum(out)
 
-    out = model(x_fmri, x_eeg)
-    print(out.shape) # (10, 1)
-    """
+    out.backward()
+
+    f_cam_grads, e_cam_grads = model.get_cam_gradients()
+    # (1, 32, 6, 7, 6), [(1, 63, 250), ...]
+    
+    f_cam_features, e_cam_features = model.get_cam_features()
+    # (1, 32, 6, 7, 6), [(1, 63, 250), ...]
+
+    print(f_cam_grads.shape)
+    print(e_cam_grads[0].shape)
+
+    print(f_cam_features.shape)
+    print(e_cam_features[0].shape)
+    
+    model.clear_grad_cam()
+    
+

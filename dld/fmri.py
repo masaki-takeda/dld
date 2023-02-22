@@ -13,11 +13,14 @@ class FMRI(object):
                  behavior,
                  normalize_per_run=True,
                  frame_type="normal",
+                 offset_tr=2,
                  smooth=True):
         # Whether to calculate the average data of 3TR
         assert (frame_type == "normal" or frame_type == "average" or frame_type == "three")
+        assert (offset_tr == 1 or offset_tr == 2 or offset_tr == 3)
         
         self.frame_type = frame_type
+        self.offset_tr = offset_tr
         self.smooth = smooth
 
         if smooth:
@@ -38,6 +41,7 @@ class FMRI(object):
         nii = nib.load(path)
         fmri_datas = np.array(nii.dataobj)
         # (79, 95, 79, 262)
+        # (x,y,z,t)
         fmri_datas = np.transpose(fmri_datas, [3, 2, 1, 0])
         # (262, 79, 95, 79) float64
         # (t,z,y,x)
@@ -49,12 +53,13 @@ class FMRI(object):
         # Get the data of +4 seconds (+2TR)
         # (i.e., Adopt frames from +4 sec to +6 sec)
         if frame_type == "normal":
-            frame_indices = behavior.get_fmri_tr_indices(offset_tr=2)
+            frame_indices = behavior.get_fmri_tr_indices(offset_tr=offset_tr)
             self.data = fmri_datas[frame_indices,:,:,:].astype(np.float32)
             # e.g., (37, 79, 95, 79)
+            #       (t,z,y,x)
         elif frame_type == "average":
             frame_indices = behavior.get_fmri_successive_tr_indices(
-                offset_tr=2,
+                offset_tr=offset_tr,
                 successive_frames=3)
             frame_indices = np.array(frame_indices, dtype=np.int32)
             org_data = fmri_datas[frame_indices].astype(np.float32)
@@ -63,7 +68,7 @@ class FMRI(object):
         else:
             # Double 'frame_type="three"'
             frame_indices = behavior.get_fmri_successive_tr_indices(
-                offset_tr=2,
+                offset_tr=offset_tr,
                 successive_frames=3)
             frame_indices = np.array(frame_indices, dtype=np.int32)
             self.data = fmri_datas[frame_indices].astype(np.float32)
@@ -99,6 +104,9 @@ class FMRI(object):
         if not self.smooth:
             # When non-smoothing data is used, "_nosmooth" is appended to the end of the directory name
             parent_dir_path = parent_dir_path + "_nosmooth"
+
+        if self.offset_tr != 2:
+            parent_dir_path = parent_dir_path + f"_tr{self.offset_tr}"
             
         if not os.path.exists(parent_dir_path):
             os.mkdir(parent_dir_path)
@@ -115,4 +123,5 @@ class FMRI(object):
 
             file_path = os.path.join(dir_path, "frame{}".format(frame_index))
             frame_data = self.data[i]
+            # (z,y,x)
             np.save(file_path, frame_data)

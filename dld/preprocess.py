@@ -9,13 +9,13 @@ from eeg import EEG
 from fmri import FMRI
 
 
-def preprocess_eeg(src_base, dst_base, behaviors, normalize_type, frame_type):
+def preprocess_eeg(src_base, dst_base, behaviors, normalize_type, frame_type, duration_type):
     print("start preparing eeg")
     eeg_datas = []
 
     for behavior in behaviors:
         eeg = EEG(src_base, behavior, normalize_type=normalize_type,
-                  frame_type=frame_type)
+                  frame_type=frame_type, duration_type=duration_type)
         eeg_datas.append(eeg.data)
 
     all_eeg_datas = np.vstack(eeg_datas)
@@ -34,12 +34,19 @@ def preprocess_eeg(src_base, dst_base, behaviors, normalize_type, frame_type):
     elif frame_type == "ft":
         # Append "_ft" to the end of the file name when using FT
         output_file_path = "{}_ft".format(output_file_path)
+
+    if duration_type == "short":
+        # Append "_short" for duration=0.5sec
+        output_file_path = "{}_short".format(output_file_path)
+    elif duration_type == "long":
+        # Append "_long" for duration=1.5sec
+        output_file_path = "{}_long".format(output_file_path)
     
     np.savez(output_file_path,
              eeg_data=all_eeg_datas)
 
 
-def preprocess_fmri(src_base, dst_base, behaviors, frame_type, smooth):
+def preprocess_fmri(src_base, dst_base, behaviors, frame_type, offset_tr, smooth):
     print("start preparing fmri")
 
     start_frame_index = 0
@@ -47,6 +54,7 @@ def preprocess_fmri(src_base, dst_base, behaviors, frame_type, smooth):
         fmri = FMRI(src_base,
                     behavior,
                     frame_type=frame_type,
+                    offset_tr=offset_tr,
                     smooth=smooth)
         print("date={}, subject={}, run={}".format(behavior.date, behavior.subject, behavior.run))
         
@@ -143,8 +151,12 @@ def preprocess():
                         default="./data")
     parser.add_argument("--fmri_frame_type", type=str,
                         default="normal") # normal, avarage, three
+    parser.add_argument("--fmri_offset_tr", type=int,
+                        default=2) # 1,2,3
     parser.add_argument("--eeg_frame_type", type=str,
                         default="filter") # normal, filter, ft
+    parser.add_argument("--eeg_duration_type", type=str,
+                        default="normal") # short, normal, long
     parser.add_argument("--debug", type=strtobool,
                         default="false")
     args = parser.parse_args()
@@ -164,11 +176,13 @@ def preprocess():
 
     if args.eeg:
         preprocess_eeg(src_base, dst_base, behaviors, args.eeg_normalize_type,
-                       frame_type=args.eeg_frame_type)
+                       frame_type=args.eeg_frame_type,
+                       duration_type=args.eeg_duration_type)
         
     if args.fmri:
         preprocess_fmri(src_base, dst_base, behaviors,
                         frame_type=args.fmri_frame_type,
+                        offset_tr=args.fmri_offset_tr,
                         smooth=args.smooth)
         
     if args.behavior:
