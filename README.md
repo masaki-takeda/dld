@@ -71,12 +71,14 @@ $ ./scripts/preprocess_alpha.sh
 | fmri | whether to preprocess the fmri data  | "true" "false"| "true" |
 | eeg | whether to preprocess the eeg data  | "true" "false"| "true" |
 | eeg_frame_type | frame type of the eeg data  | "normal", "filter", "ft"| "filter" |
+| eeg_duration_type | duration type of the eeg data  | "normal(1000ms)", "short(500ms)", "long(1500ms)"| "normal" |
 | smooth | convert smoothed fmri data or non-smoothed data | "true" "false"| "true" |
 | behavior  | whether to export a behavior data read from the csv data |"true" "false"| "true" |
 | eeg_normalize_type | normalize type of the eeg data | "normal", "pre", "none" | "normal" |
 | src_base | location of raw data files |  | "/data1/DLD/Data_Prepared" |
 | dst_base | location of export files |  | "./data" |
 | fmri_frame_type | frame type of the fmri data | "normal", "average", "three" | "normal" |
+| fmri_offset_tr | TR offset of the fmri data | 1,2,3 | 2 |
 
 Regardless of `--behavior` option, the behavior data is loaded from `experiments_data/experiemnts.csv` every time when the data is preprocessing. `--behavior` option only specifies whether to save the loaded behavior data. 
 
@@ -103,13 +105,16 @@ The same options of `--average_trial_size` and `--average_repeat_size` are used 
 | fmri | whether to preprocess the fmri data  | "true" "false"| "true" |
 | eeg | whether to preprocess the eeg data  | "true" "false"| "true" |
 | eeg_frame_type | frame type of the eeg data  | "normal", "filter", "ft"| "filter" |
+| eeg_duration_type | duration type of the eeg data  | "normal(1000ms)", "short(500ms)", "long(1500ms)"| "normal" |
 | smooth | convert smoothed fmri data or non-smoothed data | "true" "false"| "true" |
 | eeg_normalize_type | normalize type of the eeg data | "normal", "pre", "none" | "normal" |
 | dst_base | location of raw data and export files |  | "./data" |
 | fmri_frame_type | frame type of the fmri data | "normal", "average", "three" | "normal" |
+| fmri_offset_tr | TR offset of the fmri data | 1,2,3 | 2 |
 | average_trial_size | average number of trials |  | 0 |
 | average_repeat_size | number of repetitions for the augumentation |  | 0 |
-
+| unmatched | whether to unmatch averaging trials | "true","false" | "false" |
+| classify_type | classification type | -1,0,1,2 | -1 |
 
 
 Example
@@ -264,8 +269,10 @@ See `dld/options.py` for details.
 | data_dir | directory of experimental data | |  "./data" |
 | eeg_normalize_type| normalize type of the eeg data　(normal=normal, pre=use the data from the period before fixations, none=no normalization) |  "normal", "pre", "none" | "normal" |
 | fmri_frame_type| frame type of the fmri data (normal=normal, average=use the average data of 3TR, three=use the all data of 3TR) |  "normal", "average", "three" | "normal" |
+| fmri_offset_tr | TR offset of the fmri data | 1,2,3 | 2 |
 | gpu | specify the GPU to use (-1=unspecified, 0=first GPU, 1=second GPU) | | -1 |
 | eeg_frame_type | frame type of the eeg data (normal=normal, filter=5ch filter, ft=FT spectrogram) | "normal", "filter", "ft" | "filter" |
+| eeg_duration_type | duration type of the eeg data  | "normal(1000ms)", "short(500ms)", "long(1500ms)"| "normal" |
 | smooth | whether to use smoothed fmri data | "true"/"false" | "true" |
 | test_subjects | specify participants to be used for the test | enter the participants' IDs, separated by commas | "TM_191008_01,TM_191009_01" |
 | test | whether for the test or not | "true"/"false" | "false" |
@@ -282,6 +289,7 @@ See `dld/options.py` for details.
 | level_size | number of TemporalBlock (available in TCN) (-1=automatically calculated) |  | -1 |
 | level_hidden_size | number of channels of TemporalBlock (available in TCN) (63=residual become skip connection) |  | 63 |
 | residual | whether to use residual connection (available in TCN) | "true"/"false" | "true" |
+| unmatched | whether to unmatch averaging trials | "true","false" | "false" |
 
 
 
@@ -293,7 +301,27 @@ See `dld/options.py` for details.
 
 
 
-### 4.3 Options only for main_combined.py runtime
+### 4.3 Options only for main_fmri.py runtime
+
+| Option | Description | Choices | Default |
+| ------------- | ------------- | ------------- | ------------- |
+| fmri_mask  | mask name  | "frontal", "occipital", "parietal", "temporal", "subcortical", "gcam"| |
+| pfi_shuffle_size  | shuffle size for permutation feature importance (enabled when >=1)  | | 0 |
+
+
+
+There are two types of mask option usage.
+
+- a) When  `--fmri_mask` is applied without `--pfi_shuffle_size`
+  - It measures the accuracy only with some part of fMRI voxels.
+  - Used for train,validation and test datasets.
+- b) When  `--fmri_mask` is applied with `--pfi_shuffle_size` 
+  - It measures the permutaion feature importance by shuffling some part of fMRI voxels among trials.
+  - Used for test of trained models.
+
+
+
+### 4.4 Options only for main_combined.py runtime
 
 | Option | Description | Choices | Default |
 | ------------- | ------------- | ------------- | ------------- |
@@ -360,7 +388,8 @@ The options for computing Grad-CAM are same as those for **test** except for `ru
 | level_size | number of num_channels (available in TCN) (-1=automatically calculated) |  | -1 |
 | level_hidden_size | number of channels of num_channels (available in TCN) |  | 63 |
 | residual | whether to use residual connection (available in TCN) | "true"/"false" | "true" |
-
+| combined_hidden_size  | hidden size of Combined FC part | | 128 |
+| combined_layer_size  | additional layer size of Combined FC part | | 0 |
 
 
 ### Output of Grad-CAM
@@ -421,6 +450,35 @@ When `label` and `predicted_label` show 1, the prediction is correct and `guided
 
 When `label` shows 1 and `predicted_label` shows 0, the prediction is wrong.
 
+
+
+#### Combined
+
+| Key name              | Description                                                  | Shape           |
+| --------------------- | ------------------------------------------------------------ | --------------- |
+| e_guided_bp0          | EEG results of Guided-Backprop for label=0 | (*, 79, 95, 79)               |
+| e_guided_bp1          | EEG results of Guided-Backprop for label=1 | (*, 79, 95, 79)               |
+| e_cam_nopool0         | EEG results of Grad-CAM(no pooling) at each level for label=0    | (*, 7, 250)     |
+| e_cam_nopool1         | EEG results of Grad-CAM(no pooling) at each level for label=1    | (*, 7, 250)     |
+| e_cam0                | EEG results of final layer Grad-CAM with Global-Pooling for label=0    | (*, 7, 250)     |
+| e_cam1                | EEG results of final layer Grad-CAM with Global-Pooling for label=1   | (*, 7, 250)     |
+| e_raw_grad0           | EEG results of gradient(computed without effective position interpolation) at each level for label=0 | (*, 7, 63, 250) |
+| e_raw_grad1           | EEG results of gradient(computed without effective position interpolation) at each level for label=1 | (*, 7, 63, 250) |
+| e_raw_feature         | EEG results of activation(computed without effective position interpolation) at each level          | (*, 7, 63, 250) |
+| e_flat_active_grad0   | EEG results of gradient(computed only from effective position in dilated conv) at each level for level=0 | (*, 7, [])      |
+| e_flat_active_grad1   | EEG results of gradient(computed only from effective position in dilated conv) at each level for level=1 | (*, 7, [])      |
+| e_flat_active_feature | EEG results of activation(computed only from effective position in dilated conv) at each level | (*, 7, [])      |
+| f_cam0                | fMRI results of final layer Grad-CAM with Global-Pooling for label=0 | (*, 6, 7, 6)    |
+| f_cam1                | fMRI results of final layer Grad-CAM with Global-Pooling for label=1 | (*, 6, 7, 6)    |
+| f_cam_nopool0         | fMRI results of final layer Grad-CAM without Global-Pooling for label=0 | (*, 6, 7, 6)    |
+| f_cam_nopool1         | fMRI results of final layer Grad-CAM without Global-Pooling for label=1 | (*, 6, 7, 6)    |
+| f_guided_bp0          | fMRI results of Guided-Backprop for label=0              | (*, 79, 95, 79) |
+| f_guided_bp1          | fMRI results of Guided-Backprop for label=1              | (*, 79, 95, 79) |
+| f_guided_cam_nopool0  | fMRI results of Guided-Grad-CAM without Global-Pooling for label=0 | (*, 79, 95, 79) |
+| f_guided_cam_nopool1  | fMRI Results of Guided-Grad-CAM without Global-Pooling for label=1 | (*, 79, 95, 79) |
+| label              | correct label (0 or 1) | (1, *) |
+| predicted_label    | predicted label ((predicted_prob>0.5): 1, otherwise: 0) | (1, *) |
+| predicted_prob     | predicted probability (0.0~1.0) | (1, *) |
 
 
 ## 8. Grid search
