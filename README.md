@@ -305,7 +305,7 @@ See `dld/options.py` for details.
 
 | Option | Description | Choices | Default |
 | ------------- | ------------- | ------------- | ------------- |
-| fmri_mask  | mask name  | "frontal", "occipital", "parietal", "temporal", "subcortical", "gcam"| |
+| fmri_mask  | mask name  | "frontal", "occipital", "parietal", "temporal", "subcortical", "gcam", "face1" ~ "face13", "face_all", ''object1" ~ "object9", "object_all" | |
 | pfi_shuffle_size  | shuffle size for permutation feature importance (enabled when >=1)  | | 0 |
 
 
