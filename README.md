@@ -1,4 +1,4 @@
-# Deep Learning-based Decoding of Visual Object Representation in Humans (for fMRI data, EEG data, or combined fMRI-EEG data)
+# Deep Learning-based Decoding of Visual Object Representation in Humans
 
 
 
