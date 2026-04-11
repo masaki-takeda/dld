@@ -1,18 +1,20 @@
 import numpy as np
-import argparse
 import torch
 import os
 from tqdm import tqdm
 import scipy.io
+from scipy import interpolate
 
-from dataset import BrainDataset, FACE_OBJECT, MALE_FEMALE, ARTIFICIAL_NATURAL, CLASSIFY_ALL
-from dataset import DATA_TYPE_TRAIN, DATA_TYPE_VALIDATION, DATA_TYPE_TEST
+from dataset import get_dataset, CLASSIFY_ALL, CLASSIFY_TYPE_MAX
+from dataset import DATA_TYPE_VALIDATION, DATA_TYPE_TEST
+from dataset import COMBINE_TYPE_EEG, COMBINE_TYPE_FMRI, COMBINE_TYPE_COMBINED
+
 from model import get_eeg_model
-from options import get_grad_cam_args
-from utils import get_device, fix_state_dict, save_result, get_test_subject_ids
+from options import get_grad_cam_args, load_args
+from utils import get_device, fix_state_dict
 from utils import sigmoid
 from guided_bp import GuidedBackprop
-from model_stnn import calc_required_level
+from model import calc_required_level
 
 from grad_cam import get_eeg_grad_cam_sub
 
@@ -42,7 +44,7 @@ def get_eeg_grad_cam(model, data, label, kernel_size, level_size):
     
     raw_grads     = model.get_cam_gradients() # [(1, 63, 250), ... x7]
     raw_features  = model.get_cam_features()  # [(1, 63, 250), ... x7]
-
+    
     out = get_eeg_grad_cam_sub(raw_grads, raw_features, kernel_size, level_size)
     raw_grads, \
         raw_features, \
@@ -59,7 +61,7 @@ def get_eeg_grad_cam(model, data, label, kernel_size, level_size):
         grad_cam_org, \
         flat_active_grads, \
         flat_active_features
-    
+
 
 def get_eeg_cam(model, dataset, device, index, kernel_size, level_size):
     sample = dataset[index]
@@ -137,26 +139,17 @@ def process_grad_cam_eeg_sub(args,
     else:
         data_type = DATA_TYPE_VALIDATION
 
-    test_subject_ids = get_test_subject_ids(args.test_subjects)
-
-    dataset = BrainDataset(data_type=data_type,
-                           classify_type=classify_type,
-                           data_seed=args.data_seed,
-                           use_fmri=False,
-                           use_eeg=True,
-                           data_dir=args.data_dir,
-                           eeg_normalize_type=args.eeg_normalize_type,
-                           eeg_frame_type=args.eeg_frame_type,
-                           average_trial_size=args.average_trial_size,
-                           average_repeat_size=args.average_repeat_size,
-                           fold=fold,
-                           test_subjects=test_subject_ids,
-                           subjects_per_fold=args.subjects_per_fold,
-                           debug=args.debug)
-
+    combine_type = COMBINE_TYPE_EEG
+    
+    dataset = get_dataset(combine_type=combine_type,
+                          data_type=data_type,
+                          classify_type=classify_type,
+                          fold=fold,
+                          args=args)
+    
     device, use_cuda = get_device(args.gpu)
     
-    model_path = "{}/model_ct{}_{}.pt".format(args.save_dir, classify_type, fold)
+    model_path = '{}/model_ct{}_{}.pt'.format(args.save_dir, classify_type, fold)
     state = torch.load(model_path, map_location=device)
     state = fix_state_dict(state)
 
@@ -164,14 +157,14 @@ def process_grad_cam_eeg_sub(args,
 
     if level_size < 0:
         level_size = calc_required_level(args.kernel_size)
-
+    
     model = get_eeg_model(args.model_type,
                           False,
                           args.kernel_size,
                           level_size,
                           args.level_hidden_size,
                           args.residual,
-                          "normal", # TODO: Currently grad-cam only treats normal duration type only
+                          'normal', # TODO: Currently grad-cam only treats normal duration type only
                           device)
     model.load_state_dict(state)
     
@@ -206,6 +199,7 @@ def process_grad_cam_eeg_sub(args,
             args.kernel_size,
             level_size)
 
+
         guided_bp0, guided_bp1, \
         raw_grad0, raw_grad1, \
         raw_feature, \
@@ -237,8 +231,8 @@ def process_grad_cam_eeg_sub(args,
         if DEBUGGING and i == 3:
             break
         
-    np_output_file_path = f"{output_dir}/cam_eeg_ct{classify_type}_{fold}"
-    mat_output_file_path = f"{np_output_file_path}.mat"
+    np_output_file_path = f'{output_dir}/cam_eeg_ct{classify_type}_{fold}'
+    mat_output_file_path = f'{np_output_file_path}.mat'
     
     # Save in numpy format
     save_data = {
@@ -264,32 +258,31 @@ def process_grad_cam_eeg_sub(args,
 
 
 def process_grad_cam_eeg():
-    args = get_grad_cam_args()
+    raw_args = get_grad_cam_args()
 
-    output_dir = args.save_dir + "/grad_cam/data"
-    
+    output_dir = raw_args.save_dir + '/grad_cam/data'
+
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    args = load_args(raw_args.save_dir)
+
+    # For use test data for grad cam
+    args.override_params(
+        {
+            'test' : 1,
+            'debug' : raw_args.debug,
+        }
+    )
+    
     for fold in range(args.fold_size):
-        if args.classify_type == CLASSIFY_ALL or args.classify_type == FACE_OBJECT:
-            process_grad_cam_eeg_sub(args,
-                                     classify_type=FACE_OBJECT,
-                                     fold=fold,
-                                     output_dir=output_dir)
-
-        if args.classify_type == CLASSIFY_ALL or args.classify_type == MALE_FEMALE:
-            process_grad_cam_eeg_sub(args,
-                                     classify_type=MALE_FEMALE,
-                                     fold=fold,
-                                     output_dir=output_dir)
-
-        if args.classify_type == CLASSIFY_ALL or args.classify_type == ARTIFICIAL_NATURAL:
-            process_grad_cam_eeg_sub(args,
-                                     classify_type=ARTIFICIAL_NATURAL,
-                                     fold=fold,
-                                     output_dir=output_dir)
-
+        for ct in range(CLASSIFY_TYPE_MAX):
+            if args.classify_type == CLASSIFY_ALL or args.classify_type == ct:
+                process_grad_cam_eeg_sub(args,
+                                         classify_type=ct,
+                                         fold=fold,
+                                         output_dir=output_dir)
+                
 
 if __name__ == '__main__':
     process_grad_cam_eeg()

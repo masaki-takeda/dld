@@ -41,7 +41,6 @@ class FMRI(object):
         nii = nib.load(path)
         fmri_datas = np.array(nii.dataobj)
         # (79, 95, 79, 262)
-        # (x,y,z,t)
         fmri_datas = np.transpose(fmri_datas, [3, 2, 1, 0])
         # (262, 79, 95, 79) float64
         # (t,z,y,x)
@@ -56,7 +55,6 @@ class FMRI(object):
             frame_indices = behavior.get_fmri_tr_indices(offset_tr=offset_tr)
             self.data = fmri_datas[frame_indices,:,:,:].astype(np.float32)
             # e.g., (37, 79, 95, 79)
-            #       (t,z,y,x)
         elif frame_type == "average":
             frame_indices = behavior.get_fmri_successive_tr_indices(
                 offset_tr=offset_tr,
@@ -123,5 +121,4 @@ class FMRI(object):
 
             file_path = os.path.join(dir_path, "frame{}".format(frame_index))
             frame_data = self.data[i]
-            # (z,y,x)
             np.save(file_path, frame_data)

@@ -5,7 +5,10 @@
 ## 1. Preface
 
 This program was originally developed for deep neural decoding of visual object representation in human participants.
-You can find a relating manuscript before the publication at bioRxiv: .
+
+For further details, see the following papers:
+- [Multimodal deep neural decoding reveals highly resolved spatiotemporal profile of visual object representation in humans](https://www.sciencedirect.com/science/article/pii/S1053811923003154)
+- [Deep-learning-based fMRI decoding of real-world size for hand-held objects](https://www.biorxiv.org/content/10.64898/2026.02.01.703176v1)
 
 
 
@@ -114,7 +117,7 @@ The same options of `--average_trial_size` and `--average_repeat_size` are used 
 | average_trial_size | average number of trials |  | 0 |
 | average_repeat_size | number of repetitions for the augumentation |  | 0 |
 | unmatched | whether to unmatch averaging trials | "true","false" | "false" |
-| classify_type | classification type | -1,0,1,2 | -1 |
+| classify_type | classification type | -1,0,1,2,3,4 | -1 |
 
 
 Example
@@ -144,10 +147,12 @@ $ ./scripts/run.sh
 
 ### 3.2 Training EEG data
 
+The unified entry point `main.py` is used with `--combine_type` to specify the data type.
+
 Example
 
 ```shell
-python3 main_eeg.py --save_dir=./saved_eeg0 --data_dir=/data2/DLD/Data_Converted --model_type=tcn1 --test_subjects=TM_191008_01,TM_191009_01 --gpu=1
+python3 main.py --combine_type=eeg --save_dir=./saved_eeg0 --data_dir=/data2/DLD/Data_Converted --model_type=tcn1 --test_subjects=TM_200716_01,TM_200720_01,TM_200721_01,TM_200722_01,TM_200727_01 --gpu=1
 ```
 
 See below for options. (4.1, 4.2)
@@ -159,10 +164,10 @@ See below for options. (4.1, 4.2)
 Example
 
 ```shell
-python3 main_fmri.py --save_dir=./saved_fmri0 --data_dir=/data2/DLD/Data_Converted --test_subjects=TM_191008_01,TM_191009_01 --gpu=1
+python3 main.py --combine_type=fmri --save_dir=./saved_fmri0 --data_dir=/data2/DLD/Data_Converted --test_subjects=TM_200716_01,TM_200720_01,TM_200721_01,TM_200722_01,TM_200727_01 --gpu=1
 ```
 
-See below for options. (4.1)
+See below for options. (4.1, 4.3)
 
 
 
@@ -171,10 +176,10 @@ See below for options. (4.1)
 Example
 
 ```shell
-python3 main_combined.py --save_dir=./saved_combined0 --data_dir=/data2/DLD/Data_Converted --model_type=combined_tcn1 --test_subjects=TM_191008_01,TM_191009_01 --preload_eeg_dir=./saved_eeg0 --preload_fmri_dir=./saved_fmri0 --gpu=1 --lr=0.001 --lr_eeg=0.001 --lr_fmri=0.01 --weight_decay=0.0 --weight_decay_eeg=0.0 --weight_decay_fmri=0.001
+python3 main.py --combine_type=combined --save_dir=./saved_combined0 --data_dir=/data2/DLD/Data_Converted --model_type=combined_tcn1 --test_subjects=TM_200716_01,TM_200720_01,TM_200721_01,TM_200722_01,TM_200727_01 --preload_eeg_dir=./saved_eeg0 --preload_fmri_dir=./saved_fmri0 --gpu=1 --lr=0.001 --lr_eeg=0.001 --lr_fmri=0.01 --weight_decay=0.0 --weight_decay_eeg=0.0 --weight_decay_fmri=0.001
 ```
 
-See below for options. (4.1, 4.3)
+See below for options. (4.1, 4.4)
 
 
 
@@ -186,66 +191,12 @@ The `--test=true` option must be added for evaluation with test data.
 Example
 
 ```shell
-python3 main_eeg.py --save_dir=./saved_eeg0 --data_dir=/data2/DLD/Data_Converted --model_type=tcn1 --test_subjects=TM_191008_01,TM_191009_01 --gpu=1 --test=true
+python3 main.py --combine_type=eeg --save_dir=./saved_eeg0 --data_dir=/data2/DLD/Data_Converted --model_type=tcn1 --test_subjects=TM_200716_01,TM_200720_01,TM_200721_01,TM_200722_01,TM_200727_01 --gpu=1 --test=true
 
-python3 main_fmri.py --save_dir=./saved_fmri0 --data_dir=/data2/DLD/Data_Converted --test_subjects=TM_191008_01,TM_191009_01 --test=true --gpu=1
+python3 main.py --combine_type=fmri --save_dir=./saved_fmri0 --data_dir=/data2/DLD/Data_Converted --test_subjects=TM_200716_01,TM_200720_01,TM_200721_01,TM_200722_01,TM_200727_01 --test=true --gpu=1
 
-python3 main_combined.py --save_dir=./saved_combined0 --data_dir=/data2/DLD/Data_Converted --model_type=combined_tcn1 --test_subjects=TM_191008_01,TM_191009_01 --preload_eeg_dir=./saved_eeg0 --preload_fmri_dir=./saved_fmri0 --test=true --gpu=1
+python3 main.py --combine_type=combined --save_dir=./saved_combined0 --data_dir=/data2/DLD/Data_Converted --model_type=combined_tcn1 --test_subjects=TM_200716_01,TM_200720_01,TM_200721_01,TM_200722_01,TM_200727_01 --preload_eeg_dir=./saved_eeg0 --preload_fmri_dir=./saved_fmri0 --test=true --gpu=1
 ```
-
-
-
-### 3.6 Measures against Out out memory
-
-If the memory of the first GPU is occupied by another processes, you may get the error `RuntimeError: CUDA error: out of memory` even when you specify the GPU option `--gpu=1`.
-
-In such a case, the problem can be solved by setting the environment variable `export export CUDA_VISIBLE_DEVICES=1` and specifying `--gpu=0`.
-
-(The program will recognize the second GPU as the first one.)
-
-
-```shell
-$ export CUDA_VISIBLE_DEVICES=1
-$ python3 main_combined.py --save_dir=./saved_combined0 --data_dir=/data2/DLD/Data_Converted --model_type=combined_filter1 --test_subjects=TM_191008_01,TM_191009_01 --preload_eeg_dir=./saved_eeg0 --preload_fmri_dir=./saved_fmri0 --gpu=0
-```
-
-
-
-### 3.7 Model type
-
-The arguments implemented in the `model_type` option are as follows.
-
-
-#### EEG
-
-| model_type | Model name | Description |
-| :--------- | ------------------ | ---- |
-| model1     | EEGModel           | 1D Conv model |
-| model2     | EEGModel2          | a model with a larger stride on the first layer of EEGModel |
-| rnn1       | EEGRNNModel        | RNN (LSTM) model |
-| convrnn1   | EEGConvRNNModel    | a model with 1D Conv followed by LSTM applied |
-| filter1    | EEGFilterModel     | a filter model with 2D convolution: the input data is considered as an image of width:250, height:63, and color:5ch |
-| filter2    | EEGFilterModel2    | a filter model with 2D convolution: the input data is considered as an image of width:250, height:5, and color:63ch |
-| filter3    | EEGFilterModel3    | a filter model with the first connection layer followed by 1D Conv applied |
-| ft1        | EEGFtModel         | a model corresponding to FT Spectrogram |
-| stnn1      | EEGSTNNModel       | STNN model |
-| tcn1      | EEGSTCNModel       | TCN model: use only the last step |
-| tcn2      | EEGSTCNModel2       | TCN model: use all steps |
-
-#### fMRI
-
-| model_type | Model name | Description |
-| :--------- | ------------------ | ---- |
-|            | FMRIModel          | 3D Conv model |
-
-#### Combined
-
-| model_type | Model name | Description |
-| :--------- | -------- | ---- |
-| combined1     | CombinedModel | a combined model with FMRIModel and EEGModel (`model1`) |
-| combined_filter1     |  CombinedFilterModel   | a filter model with FMRIModel and EEGFilterModel2 (`model2`) |
-| combined_tcn1     |  CombinedTCNModel   | a model with FMRIModel and EEGTCNModel (`tcn1`) |
-
 
 
 
@@ -253,31 +204,35 @@ The arguments implemented in the `model_type` option are as follows.
 
 See `dld/options.py` for details.
 
+The first argument `--combine_type` specifies which data type to use: `eeg`, `fmri`, or `combined`.
+
 
 
 ### 4.1 Options common to EEG/fMRI/Combined
 
 | Option | Description | Choices | Default |
 | ------------- | ------------- | ------------- | ------------- |
+| combine_type | data type to use | "eeg", "fmri", "combined" | |
 | data_seed | a random seed used for Cross-Validation separation (basically unchanged) | | 0 |
 | run_seed | to fix a seed (not using a random seed), enter a specific number other than -1 (takes longer) | | -1 |
 | save_dir  | save directory  | | "saved" |
-| classify_type  | classification type/stimulus condition | 0=FACE/PLACE 1=MALE/FEMALE, 2=ARTIFICAL/NATURAL, -1=ALL| -1 |
+| classify_type  | classification type/stimulus condition | 0=FACE/OBJECT, 1=MALE/FEMALE, 2=ARTIFICAL/NATURAL, 3=FRONT/SIDE, 4=SMALL/LARGE, -1=ALL| -1 |
 | desc  | experiment descriptions | | |
 | early_stopping| whether to use Early Stopping |  "true"/"false" | "true" |
+| early_stopping_metric | metric used for Early Stopping evaluation | "accuracy", "roc_auc", "pr_auc", "f1", "precision", "recall", "n_precision", "n_recall", "n_f1", "n_pr_auc" | "accuracy" |
 | parallel| whether to train on multiple GPUs |  "true"/"false" | "false" |
 | data_dir | directory of experimental data | |  "./data" |
 | eeg_normalize_type| normalize type of the eeg data　(normal=normal, pre=use the data from the period before fixations, none=no normalization) |  "normal", "pre", "none" | "normal" |
 | fmri_frame_type| frame type of the fmri data (normal=normal, average=use the average data of 3TR, three=use the all data of 3TR) |  "normal", "average", "three" | "normal" |
 | fmri_offset_tr | TR offset of the fmri data | 1,2,3 | 2 |
 | gpu | specify the GPU to use (-1=unspecified, 0=first GPU, 1=second GPU) | | -1 |
-| eeg_frame_type | frame type of the eeg data (normal=normal, filter=5ch filter, ft=FT spectrogram) | "normal", "filter", "ft" | "filter" |
+| eeg_frame_type | frame type of the eeg data (normal=normal, filter=5ch filter, ft=FT spectrogram) | "normal", "filter", "ft" | "normal" |
 | eeg_duration_type | duration type of the eeg data  | "normal(1000ms)", "short(500ms)", "long(1500ms)"| "normal" |
 | smooth | whether to use smoothed fmri data | "true"/"false" | "true" |
-| test_subjects | specify participants to be used for the test | enter the participants' IDs, separated by commas | "TM_191008_01,TM_191009_01" |
+| test_subjects | specify participants to be used for the test | enter the participants' IDs, separated by commas | "TM_200716_01,TM_200720_01,TM_200721_01,TM_200722_01,TM_200727_01" |
 | test | whether for the test or not | "true"/"false" | "false" |
-| fold_size | number of Fold to be used out of 10 Fold |  | 10 |
-| subjects_per_fold | number of participants assigned to 1 Fold |  | 4 |
+| fold_size | number of Fold to be used out of N Fold |  | 9 |
+| subjects_per_fold | number of participants assigned to 1 Fold |  | 5 |
 | patience | number of minimal continuous epochs in Early Stopping |  | 20 |	
 | batch_size | batch size | | 10 |
 | lr | learning rate | | 0.001 |
@@ -285,43 +240,42 @@ See `dld/options.py` for details.
 | epochs | number of training epochs | | 100 |
 | average_trial_size | average number of trials |  | 0 |
 | average_repeat_size | number of repetitions for the augumentation |  | 0 |
-| kernel_size | kernel size (available in STNN and TCN) |  | 3 |
+| kernel_size | kernel size (available in TCN) |  | 3 |
 | level_size | number of TemporalBlock (available in TCN) (-1=automatically calculated) |  | -1 |
 | level_hidden_size | number of channels of TemporalBlock (available in TCN) (63=residual become skip connection) |  | 63 |
 | residual | whether to use residual connection (available in TCN) | "true"/"false" | "true" |
 | unmatched | whether to unmatch averaging trials | "true","false" | "false" |
-
-
-
-### 4.2 Options only for main_eeg.py runtime
-
-| Option | Description | Choices | Default |
-| ------------- | ------------- | ------------- | ------------- |
-| model_type  | model type  | "model1", "model1", "rnn1", "convrnn1", "filter1", "filter2", "filter3", "stnn1", "tcn1", "tcn2"| "model1"|
-
-
-
-### 4.3 Options only for main_fmri.py runtime
-
-| Option | Description | Choices | Default |
-| ------------- | ------------- | ------------- | ------------- |
-| fmri_mask  | mask name  | "frontal", "occipital", "parietal", "temporal", "subcortical", "gcam", "face1" ~ "face13", "face_all", ''object1" ~ "object9", "object_all" | |
+| fmri_mask  | mask name for fMRI voxel selection  | "frontal", "occipital", "parietal", "temporal", "subcortical", "gcam", "face1" ~ "face13", "face_all", "object1" ~ "object9", "object_all" | |
 | pfi_shuffle_size  | shuffle size for permutation feature importance (enabled when >=1)  | | 0 |
+| debug | whether to use debug mode (use only the first few participants) | "true"/"false" | "false" |
 
 
-
-There are two types of mask option usage.
+There are two types of `fmri_mask` option usage.
 
 - a) When  `--fmri_mask` is applied without `--pfi_shuffle_size`
   - It measures the accuracy only with some part of fMRI voxels.
-  - Used for train,validation and test datasets.
+  - Used for train, validation and test datasets.
 - b) When  `--fmri_mask` is applied with `--pfi_shuffle_size` 
-  - It measures the permutaion feature importance by shuffling some part of fMRI voxels among trials.
+  - It measures the permutation feature importance by shuffling some part of fMRI voxels among trials.
   - Used for test of trained models.
 
 
 
-### 4.4 Options only for main_combined.py runtime
+### 4.2 Options only for EEG (--combine_type=eeg) runtime
+
+| Option | Description | Choices | Default |
+| ------------- | ------------- | ------------- | ------------- |
+| model_type  | model type  | "tcn1" | "tcn1"|
+
+
+
+### 4.3 Options only for fMRI (--combine_type=fmri) runtime
+
+No additional options beyond the common options (4.1).
+
+
+
+### 4.4 Options only for Combined (--combine_type=combined) runtime
 
 | Option | Description | Choices | Default |
 | ------------- | ------------- | ------------- | ------------- |
@@ -332,7 +286,7 @@ There are two types of mask option usage.
 | lr_fmri |  learning rate of the fMRI model | | unspecified |
 | weight_decay_eeg | weight decay of the EEG model | | unspecified |
 | weight_decay_fmri |  weight decay of the fMRI model | | unspecified |
-| model_type  | model type  | "combined1", "combined_filter1", "combined_tcn1"| "combined_tcn1" |
+| model_type  | model type  | "combined_tcn1"| "combined_tcn1" |
 | combined_hidden_size  | hidden size of Combined FC part | | 128 |
 | combined_layer_size  | additional layer size of Combined FC part | | 0 |
 
@@ -343,7 +297,7 @@ There are two types of mask option usage.
 If `lr_eeg` and/or `lr_fmri` are not specified, `lr` is applied instead. `weight_decay` acts in the same manner.
 
 
-If either `preload_eeg_dir` or `preload_frmi_dir` is not specified, both EEG and fMRI model are not preloaded. (Only one side is not acceptable)
+If either `preload_eeg_dir` or `preload_fmri_dir` is not specified, both EEG and fMRI model are not preloaded. (Only one side is not acceptable)
 
 
 Specifying `combined_hidden_size` and `combined_layer_size` can increase the additional Full Connection layer that is combined by EEG and fMRI layer.
@@ -354,42 +308,24 @@ Specifying `combined_hidden_size` and `combined_layer_size` can increase the add
 
 Output data and visualize the results as follows.
 
+The Grad-CAM scripts automatically load training parameters from the saved `options.json` in `save_dir`. Only `--save_dir` (and optionally `--debug`) need to be specified.
+
 
 
 Example
 
 ```shell
-python3 main_grad_cam_eeg.py --save_dir=./saved_eeg0 --data_dir=/data2/DLD/Data_Converted --model_type=tcn1 --test_subjects=TM_191008_01,TM_191009_01 --gpu=1 --test=true
+python3 main_grad_cam_eeg.py --save_dir=./saved_eeg0
 
-python3 main_grad_cam_fmri.py --save_dir=./saved_fmri0 --data_dir=/data2/DLD/Data_Converted --test_subjects=TM_191008_01,TM_191009_01 --gpu=1 --test=true
+python3 main_grad_cam_fmri.py --save_dir=./saved_fmri0
 ```
-
-The options for computing Grad-CAM are same as those for **test** except for `run_seed`, `classify_type`, `early_stopping`, `parallel`, `patience`, and `batch_size`. 
 
 
 
 | Option | Description | Choices | Default |
 | ------------- | ------------- | ------------- | ------------- |
-| data_dir  | data directory | | "./data" |
-| save_dir  | output directory of model data and results | | "saved" |
-| classify_type  | classification type/stimulus condition  | 0=FACE/PLACE 1=MALE/FEMALE, 2=ARTIFICAL/NATURAL, -1=ALL| -1 |
-| eeg_normalize_type| normalize type of the eeg data　(normal=normal, pre=use the data from the period before fixations, none=no normalization) |  "normal", "pre", "none" | "normal" |
-| fmri_frame_type| frame type of the fmri data (normal=normal, average=use the average data of 3TR, three=use the all data of 3TR) |  "normal", "average", "three" | "normal" |
-| model_type  | model type  | specify the same model_type as Training | specify the same model_type as Training |
-| eeg_frame_type | frame type of the eeg data (normal=normal, filter=5ch filter, ft=FT spectrogram) | "normal", "filter", "ft" | "filter" |
-| smooth | whether to use smoothed fmri data | "true"/"false" | "true" |
-| gpu | specify the GPU to use (-1=unspecified, 0=first GPU, 1=second GPU) | | -1 |
-| data_seed | a random seed used for Cross-Validation separation (basically unchanged) | | 0 |
-| test | whether to use the test data set (false=use the validation data set) | "true"/"false" | "true" |
-| test_subjects | specify participants to be used for the test | enter the participants' IDs, separated by commas | "TM_191008_01,TM_191009_01" |
-| fold_size | number of Fold to be used out of 10 Fold |  | 10 |
-| subjects_per_fold | number of participants assigned to 1 Fold |  | 4 |
-| kernel_size | kernel size (available in STNN and TCN) |  | 3 |
-| level_size | number of num_channels (available in TCN) (-1=automatically calculated) |  | -1 |
-| level_hidden_size | number of channels of num_channels (available in TCN) |  | 63 |
-| residual | whether to use residual connection (available in TCN) | "true"/"false" | "true" |
-| combined_hidden_size  | hidden size of Combined FC part | | 128 |
-| combined_layer_size  | additional layer size of Combined FC part | | 0 |
+| save_dir  | directory of saved model data and results | | "saved" |
+| debug | whether to use debug mode | "true"/"false" | "false" |
 
 
 ### Output of Grad-CAM
@@ -481,62 +417,94 @@ When `label` shows 1 and `predicted_label` shows 0, the prediction is wrong.
 | predicted_prob     | predicted probability (0.0~1.0) | (1, *) |
 
 
-## 8. Grid search
 
-To perform Grid search, prepare and run the script for Grid search referring to `main_grid_search_example.py`.
+## 	8. Hyperparameter optimization
 
-Specify an executable file, a save directory name, grid search options, and fixed options as follows.
+Hyperparameter optimization is performed using Bayesian optimization with Optuna. Prepare a script referring to `main_optimize_sample.py` and run it.
 
+
+In the script, specify the executable file, save directory name prefix, optimization target options, and fixed options as follows.
 
 ```python
-#-----[changes from here]-----
-# specify an executable file
-target_file = "main_eeg.py"
+#-----[Changes from here]-----
+# Trail size for hyper-parameter optization
+optimization_trial_size = 10
 
-save_dir_prefix = "./saved_eeg"
-# the save directory name should be "./saved_eeg_0_0", "./saved_eeg_0_1" ... and so on.
+# Combine type
+combine_type = 'eeg' # combined, fmri, eeg
+classify_type = FRONT_SIDE # FACE_OBJECT, MALE_FEMALE, ARTIFICIAL_NATURAL, FRONT_SIDE, SMALL_LARGE
 
-# grid search options
-# specify options as an array
-variable_options["lr"]           = ["0.1", "0.01", "0.001"]
-variable_options["weight_decay"] = ["0.0", "0.01", "0.1"]
+save_dir_prefix = "./saved_eeg_op0/op"
+# When specifying up to a subdirectory as above
+# The save directory will be "./saved_eeg_op0/op_0", "./saved_eeg_op0/op_1" ... and so on
 
-# fixed options 
-fixed_options["data_dir"]      = "./data2/DLD/Data_Converted"
-fixed_options["model_type"]    = "filter2"
-fixed_options["test_subjects"] = "TM_191008_01,TM_191009_01"
-fixed_options["fold_size"]     = "1" #To speed up, only one Fold can be targeted
-#-----[to here]-----
+def objective_func(trial):
+    params = {
+        # Optimizing parameters
+        'lr'          : trial.suggest_loguniform('lr', 0.0001, 0.1),
+        #'weight_decay': trial.suggest_uniform('weight_decay', 0.0, 0.1),
+        'kernel_size' : trial.suggest_int('kernel_size', 2, 9),
+        #'residual'    : trial.suggest_categorical('residual', [0, 1]),
+        # Non-numeric values such as model type can also be specified with categorical
+        #'model_type'  : trial.suggest_categorical('model_type', ['tcn1', 'tcnx']),
+
+        # Fixed parameters
+        'eeg_normalize_type' : 'pre',
+        'batch_size' : 100,
+        'patience'   : 50,
+        'data_dir'   : '/data2/DLD/Data_Converted',
+        'fold_size'  : 1, # When only 1 Fold is targeted to speed up the processing
+        'gpu'        : 1,
+    }
+    return params
+#-----[To here]-----
 ```
 
 
 Prepare and run a script in the same manner as the sample.
 
 ```shell
-python3 main_grid_search_sample.py
+python3 main_optimize_sample.py
 ```
 
 
 
-In the above example, a summary is exported to `./saved_eeg_summary/summary.tx` after execution as follows.
+In the above example, after execution, a summary is exported to `./saved_eeg_op0/op_summary/summary.txt` as follows.
+
 (The one with the best validation score will be labeled **best**.)
 
-```
-[ClasslfyType0]
-  [    ] ./saved_eeg_0_0: 50.0 (lr=0.1 weight_decay=0.0)
-  [    ] ./saved_eeg_0_1: 50.0 (lr=0.1 weight_decay=0.01)
-  [    ] ./saved_eeg_0_2: 50.0 (lr=0.1 weight_decay=0.1)
-  [    ] ./saved_eeg_1_0: 50.0 (lr=0.01 weight_decay=0.0)
-  [    ] ./saved_eeg_1_1: 50.0 (lr=0.01 weight_decay=0.01)
-  [    ] ./saved_eeg_1_2: 50.0 (lr=0.01 weight_decay=0.1)
-  [    ] ./saved_eeg_2_0: 50.0 (lr=0.001 weight_decay=0.0)
-  [best] ./saved_eeg_2_1: 63.333333333333333 (lr=0.001 weight_decay=0.01)
-  [    ] ./saved_eeg_2_2: 50.0 (lr=0.001 weight_decay=0.1)
+Also, the parameters for the best validation score are written at the top.
 
-[ClasslfyType1]
-  [best] ./saved_eeg_0_0: 53.333333333333336 (lr=0.1 weight_decay=0.0)
-  [    ] ./saved_eeg_0_1: 53.333333333333336 (lr=0.1 weight_decay=0.01)
-  [    ] ./saved_eeg_0_2: 46.666666666666664 (lr=0.1 weight_decay=0.1)
+
+
+```
+[Best params]
+  lr = 0.00015342044981142149
+  kernel_size = 7
+
+[Results]
+  [    ] ./saved_eeg_op_av1/op_0: 60.90794451450189 lr=0.0002, kernel_size=4,
+  [    ] ./saved_eeg_op_av1/op_1: 61.7906683480454 lr=0.0004, kernel_size=9,
+  [    ] ./saved_eeg_op_av1/op_2: 59.01639344262295 lr=0.0003, kernel_size=3,
+  [    ] ./saved_eeg_op_av1/op_3: 62.42118537200504 lr=0.0028, kernel_size=4,
+  [best] ./saved_eeg_op_av1/op_4: 63.68221941992434 lr=0.0002, kernel_size=7,
+  [    ] ./saved_eeg_op_av1/op_5: 61.53846153846154 lr=0.0017, kernel_size=7,
+  [    ] ./saved_eeg_op_av1/op_6: 62.042875157629254 lr=0.0014, kernel_size=9,
+  [    ] ./saved_eeg_op_av1/op_7: 50.94577553593947 lr=0.0851, kernel_size=6,
+  [    ] ./saved_eeg_op_av1/op_8: 59.52080706179067 lr=0.0041, kernel_size=3,
+  [    ] ./saved_eeg_op_av1/op_9: 60.529634300126105 lr=0.0003, kernel_size=6,
+  [    ] ./saved_eeg_op_av1/op_10: 49.05422446406053 lr=0.0215, kernel_size=8,
+  [    ] ./saved_eeg_op_av1/op_11: 59.89911727616646 lr=0.0073, kernel_size=5,
 ...
 ```
+
+
+
+To perform test evaluation on the optimized model, add `--test=true` and run.
+
+```
+python3 main_optimize_sample.py --test=true
+```
+
+The evaluation results will be recorded in `./saved_eeg_op0/op_summary/summary_test.txt`.
 

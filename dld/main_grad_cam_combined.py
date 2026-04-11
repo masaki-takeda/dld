@@ -1,21 +1,21 @@
 import numpy as np
-import argparse
 import torch
 import os
-from distutils.util import strtobool
 from tqdm import tqdm
 import scipy.ndimage
 import scipy.io
 
-from dataset import BrainDataset, FACE_OBJECT, MALE_FEMALE, ARTIFICIAL_NATURAL, CLASSIFY_ALL
-from dataset import DATA_TYPE_TRAIN, DATA_TYPE_VALIDATION, DATA_TYPE_TEST
-from model import get_combined_model
-from options import get_grad_cam_args
-from utils import get_device, fix_state_dict, save_result, get_test_subject_ids
-from utils import sigmoid
-from guided_bp import GuidedBackprop
-from model_stnn import calc_required_level
+from dataset import get_dataset, CLASSIFY_ALL, CLASSIFY_TYPE_MAX
+from dataset import DATA_TYPE_VALIDATION, DATA_TYPE_TEST
+from dataset import COMBINE_TYPE_EEG, COMBINE_TYPE_FMRI, COMBINE_TYPE_COMBINED
 
+from model import get_combined_model
+from options import get_grad_cam_args, load_args
+from utils import get_device, fix_state_dict
+from utils import sigmoid
+from model import calc_required_level
+
+from guided_bp import GuidedBackprop
 from grad_cam import get_eeg_grad_cam_sub, get_fmri_grad_cam_sub
 
 
@@ -154,42 +154,33 @@ def get_combined_cam(model, dataset, device, index, kernel_size, level_size):
         e_flat_active_features0, \
         int(s_label), predicted_label, predicted_prob
 
-    
+
 def process_grad_cam_combined_sub(args,
                                   classify_type,
                                   fold,
                                   output_dir):
-    
+
     if args.test:
         data_type = DATA_TYPE_TEST
     else:
         data_type = DATA_TYPE_VALIDATION
 
-    test_subject_ids = get_test_subject_ids(args.test_subjects)
-    
-    dataset = BrainDataset(data_type=data_type,
-                           classify_type=classify_type,
-                           data_seed=args.data_seed,
-                           use_fmri=True,
-                           use_eeg=True,
-                           data_dir=args.data_dir,
-                           fmri_frame_type=args.fmri_frame_type,
-                           eeg_normalize_type=args.eeg_normalize_type,
-                           eeg_frame_type=args.eeg_frame_type,
-                           use_smooth=args.smooth,
-                           average_trial_size=args.average_trial_size,
-                           average_repeat_size=args.average_repeat_size,
-                           fold=fold,
-                           test_subjects=test_subject_ids,
-                           subjects_per_fold=args.subjects_per_fold,
-                           debug=args.debug)
+    combine_type = COMBINE_TYPE_COMBINED
 
+    dataset = get_dataset(combine_type=combine_type,
+                          data_type=data_type,
+                          classify_type=classify_type,
+                          fold=fold,
+                          args=args)
+    
     device, use_cuda = get_device(args.gpu)
-    
+
     model_path = "{}/model_ct{}_{}.pt".format(args.save_dir, classify_type, fold)
-    
+
     state = torch.load(model_path, map_location=device)
-    state = fix_state_dict(state)
+    state = fix_state_dict(state)    
+
+    fmri_ch_size = dataset.fmri_ch_size
 
     level_size = args.level_size
 
@@ -206,7 +197,7 @@ def process_grad_cam_combined_sub(args,
                                args.combined_layer_size,
                                False,
                                device)
-    
+
     model.load_state_dict(state)
     
     data_size = len(dataset)
@@ -289,9 +280,12 @@ def process_grad_cam_combined_sub(args,
         
         bar.update()
 
+        #if DEBUGGING and i == 3:
+        #    break
+
     np_output_file_path = f"{output_dir}/cam_combined_ct{classify_type}_{fold}"
     mat_output_file_path = f"{np_output_file_path}.mat"
-        
+
     # Save in numpy format
     save_data = {
         'f_cam0' : f_cams0,
@@ -329,32 +323,30 @@ def process_grad_cam_combined_sub(args,
 
 
 def process_grad_cam_combined():
-    args = get_grad_cam_args()
+    raw_args = get_grad_cam_args()
 
-    output_dir = args.save_dir + "/grad_cam/data"
+    output_dir = raw_args.save_dir + "/grad_cam/data"
     
     if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+        os.makedirs(output_dir)    
+
+    args = load_args(raw_args.save_dir)
+
+    # For use test data for grad cam
+    args.override_params(
+        {
+            'test' : 1,
+            'debug' : raw_args.debug,
+        }
+    )
 
     for fold in range(args.fold_size):
-        if args.classify_type == CLASSIFY_ALL or args.classify_type == FACE_OBJECT:
-            process_grad_cam_combined_sub(args,
-                                          classify_type=FACE_OBJECT,
-                                          fold=fold,
-                                          output_dir=output_dir)
-            
-        if args.classify_type == CLASSIFY_ALL or args.classify_type == MALE_FEMALE:            
-            process_grad_cam_combined_sub(args,
-                                          classify_type=MALE_FEMALE,
-                                          fold=fold,
-                                          output_dir=output_dir)
-
-        if args.classify_type == CLASSIFY_ALL or args.classify_type == ARTIFICIAL_NATURAL:
-            process_grad_cam_combined_sub(args,
-                                          classify_type=ARTIFICIAL_NATURAL,
-                                          fold=fold,
-                                          output_dir=output_dir)
-
+        for ct in range(CLASSIFY_TYPE_MAX):
+            if args.classify_type == CLASSIFY_ALL or args.classify_type == ct:
+                process_grad_cam_combined_sub(args,
+                                              classify_type=ct,
+                                              fold=fold,
+                                              output_dir=output_dir)
 
 if __name__ == '__main__':
     process_grad_cam_combined()

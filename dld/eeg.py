@@ -1,9 +1,6 @@
 import numpy as np
 import h5py
 
-# for small and long
-from scipy import io
-
 from behavior import Behavior
 
 # Prepare data for channel interpolation
@@ -163,19 +160,19 @@ class EEG(object):
             duration_suffix = "_1500ms"
         else:
             duration_suffix = ""
-            
+
         # EEG data:
         #   short  = from -0.5 to +0.5 seconds
         #   normal = from -0.5 to +1.0 seconds
         #   long   = from -0.5 to +1.5 seconds
-        
+
         path_format = "{0}/EEG/Epoched{4}/TM_{1}_{2:0>2}/TM_{1}_{2:0>2}_{3:0>2}_Segmentation.mat"
-        
+
         path = path_format.format(src_base,
                                   behavior.date,
                                   behavior.subject,
                                   behavior.run,
-                                  duration_suffix)
+                                  duration_suffix)        
 
         if duration_type == "short" or duration_type == "long":
             # shortとlongは従来の形式だったのでworkaroundを入れる.
@@ -199,7 +196,7 @@ class EEG(object):
                     # For FT
                     eeg_data = np.array(f['FT_Specgram'])           # (50, 17, 163, 64)
                     eeg_data = np.transpose(eeg_data, [3, 2, 0, 1]) # (64, 163, 50, 17)
-            
+        
         ch_indices = []
         for i in range(64):
             # Exclude ECG(31)

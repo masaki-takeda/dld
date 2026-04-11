@@ -5,7 +5,7 @@ from distutils.util import strtobool
 
 from dataset import FACE_OBJECT, MALE_FEMALE, ARTIFICIAL_NATURAL
 from dataset import CATEGORY_FACE, CATEGORY_OBJECT, SUBCATEGORY_MALE, SUBCATEGORY_FEMALE, SUBCATEGORY_ARTIFICIAL, SUBCATEGORY_NATURAL
-
+from dataset import FRONT_SIDE, SMALL_LARGE
 
 class Subject:
     def __init__(self,
@@ -102,7 +102,7 @@ class AveragingBehavior:
                  repeat_indices1,
                  subject_ids0,
                  subject_ids1):
-                 
+
         self.classify_type  = classify_type
         self.indices0        = indices0 # (*,average_trial_size)
         self.indices1        = indices1 # (*,average_trial_size)
@@ -112,7 +112,7 @@ class AveragingBehavior:
         self.repeat_indices1 = repeat_indices1 # (*,)
         self.subject_ids0    = subject_ids0
         self.subject_ids1    = subject_ids1
-    
+
     @property
     def indices(self):
         return np.concatenate([self.indices0, self.indices1], axis=0) # (*,average_trial_size)
@@ -133,7 +133,11 @@ class AveragingBehavior:
                 ([CATEGORY_OBJECT] * len(self.indices1))
         elif self.classify_type == MALE_FEMALE:
             categories = [CATEGORY_FACE] * (len(self.indices0) + len(self.indices1))
-        else:
+        elif self.classify_type == ARTIFICIAL_NATURAL:
+            categories = [CATEGORY_OBJECT] * (len(self.indices0) + len(self.indices1))
+        elif self.classify_type == FRONT_SIDE:
+            categories = [CATEGORY_FACE] * (len(self.indices0) + len(self.indices1))
+        elif self.classify_type == SMALL_LARGE:
             categories = [CATEGORY_OBJECT] * (len(self.indices0) + len(self.indices1))
         return np.array(categories, dtype=np.int32)
 
@@ -145,31 +149,54 @@ class AveragingBehavior:
             sub_categories = \
                 ([SUBCATEGORY_MALE] * len(self.indices0)) + \
                 ([SUBCATEGORY_FEMALE] * len(self.indices1))
-        else:
+        elif self.classify_type == ARTIFICIAL_NATURAL:
             sub_categories = \
                 ([SUBCATEGORY_ARTIFICIAL] * len(self.indices0)) + \
                 ([SUBCATEGORY_NATURAL] * len(self.indices1))
+        elif self.classify_type == FRONT_SIDE:
+            sub_categories = [-1] * (len(self.indices0) + len(self.indices1))
+        elif self.classify_type == SMALL_LARGE:
+            sub_categories = [-1] * (len(self.indices0) + len(self.indices1))
         return np.array(sub_categories, dtype=np.int32)
 
     @property
+    def identities(self):
+        if self.classify_type == SMALL_LARGE:
+            # allocate small=-2, large=-3 for avaraging
+            identities = ([-2] * len(self.indices0)) + \
+                         ([-3] * len(self.indices1))
+        else:
+            identities = [-1] * (len(self.indices0) + len(self.indices1))
+        return np.array(identities, dtype=np.int32)
+
+    @property
+    def angles(self):
+        if self.classify_type == FRONT_SIDE:
+            # allocate font=-2, side=-3 for avaraging
+            angles = ([-2] * len(self.indices0)) + \
+                     ([-3] * len(self.indices1))
+        else:
+            angles = [-1] * (len(self.indices0) + len(self.indices1))
+        return np.array(angles, dtype=np.int32)
+        
+    @property
     def subject_ids(self):
         return np.concatenate([self.subject_ids0, self.subject_ids1], axis=0)
-        
-        
+
+
 def preprocess_average_behavior(behavior_data,
                                 classify_type,
                                 average_trial_size,
                                 average_repeat_size,
                                 unmatched):
-    """ 
-    Create AveragingBehavior class inscens.
-    """
     
-    categories     = behavior_data["category"]     # (17306),
-    sub_categories = behavior_data["sub_category"] # (17306),
-    subjects       = behavior_data["subject"]      # (17306),
-
-    subject_ids = np.unique(subjects) # (50),
+    categories     = behavior_data["category"]     # (3940),
+    sub_categories = behavior_data["sub_category"] # (3940),
+    subjects       = behavior_data["subject"]      # (3940),
+    identities     = behavior_data["identity"]     # (3940),
+    angles         = behavior_data["angle"]        # (3940),
+    
+    subject_ids = np.unique(subjects)
 
     subject_objs = []
     
@@ -195,7 +222,7 @@ def preprocess_average_behavior(behavior_data,
                                  zip((categories == CATEGORY_FACE),
                                      (sub_categories == SUBCATEGORY_FEMALE),
                                      (subjects == subject_id))])[0]
-        else:
+        elif classify_type == ARTIFICIAL_NATURAL:
             # Artificial-Object index array
             indices0 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
                                  zip((categories == CATEGORY_OBJECT),
@@ -206,6 +233,32 @@ def preprocess_average_behavior(behavior_data,
                                  zip((categories == CATEGORY_OBJECT),
                                      (sub_categories == SUBCATEGORY_NATURAL),
                                      (subjects == subject_id))])[0]
+        elif classify_type == FRONT_SIDE:
+            # Front
+            indices0 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
+                                 zip((categories == CATEGORY_FACE),
+                                     (angles == 2),
+                                     (subjects == subject_id))])[0]
+            # Side
+            indices1 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
+                                 zip((categories == CATEGORY_FACE),
+                                     (angles != 2),
+                                     (subjects == subject_id))])[0]
+        elif classify_type == SMALL_LARGE:
+            # small
+            indices0 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
+                                 zip((categories == CATEGORY_OBJECT),
+                                     ((identities == 0) | (identities == 2)),
+                                     (subjects == subject_id))])[0]
+            # Large
+            indices1 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
+                                 zip((categories == CATEGORY_OBJECT),
+                                     ((identities == 1) | (identities == 3)),
+                                     (subjects == subject_id))])[0]
+        else:
+            assert False
+            
+            
         subject_obj = Subject(subject_id,
                               indices0,
                               indices1,
@@ -219,10 +272,10 @@ def preprocess_average_behavior(behavior_data,
 
     averaging_indices0 = np.concatenate(
         [subject_obj.averaging_indices0 for subject_obj in subject_objs],
-        axis=0) # (***, average_trial_size)
+        axis=0) # (***, 3)
     averaging_indices1 = np.concatenate(
         [subject_obj.averaging_indices1 for subject_obj in subject_objs],
-        axis=0) # (***, average_trial_size)
+        axis=0) # (***, 3)
 
     if unmatched:
         alt_averaging_indices0 = np.concatenate(
@@ -235,6 +288,7 @@ def preprocess_average_behavior(behavior_data,
         alt_averaging_indices0 = None
         alt_averaging_indices1 = None
 
+    # averaging_repeat_indices0,1は最終的には使っていない
     averaging_repeat_indices0 = np.concatenate(
         [subject_obj.averaging_repeat_indices0 for subject_obj in subject_objs],
         axis=0) # (***,)
@@ -259,7 +313,7 @@ def preprocess_average_behavior(behavior_data,
                                            subject_ids0,
                                            subject_ids1)
     return averaging_behavior
-    
+
 
 def preprocess_average_eeg(dst_base,
                            averaging_behavior,
@@ -269,11 +323,11 @@ def preprocess_average_eeg(dst_base,
                            eeg_frame_type,
                            eeg_duration_type,
                            unmatched):
-    
+
     assert (eeg_normalize_type == "normal" or eeg_normalize_type == "pre" or eeg_normalize_type == "none")
     assert (eeg_frame_type == "normal" or eeg_frame_type == "filter" or eeg_frame_type == "ft")
     assert (eeg_duration_type == "normal" or eeg_duration_type == "short" or eeg_duration_type == "long")
-
+    
     print("processing eeg: classify_type={}".format(averaging_behavior.classify_type))
 
     eeg_suffix = ""
@@ -302,7 +356,7 @@ def preprocess_average_eeg(dst_base,
     else:
         eeg_data_path_base = os.path.join(dst_base, "final_eeg_data_none{}{}".format(
             eeg_suffix, duration_suffix))
-        
+
     eeg_data_all = np.load(eeg_data_path_base + ".npz")
     eeg_datas = eeg_data_all["eeg_data"] # (3940, 63, 375) or (3940, 5, 63, 375)等
 
@@ -312,7 +366,7 @@ def preprocess_average_eeg(dst_base,
     else:
         # For unmatched averaging
         indices = averaging_behavior.alt_indices
-
+    
     avaraging_eeg_datas = eeg_datas[indices] # (1053, 3, 5, 63, 375)
     mean_eeg_datas = avaraging_eeg_datas.mean(axis=1) # (1053, 5, 63, 375)
 
@@ -392,7 +446,7 @@ def preprocess_average_fmri(dst_base,
 
     if not os.path.exists(output_fmri_data_dir):
         os.mkdir(output_fmri_data_dir)
-
+    
     averaging_indices = averaging_behavior.indices
     # e.g., (1053, 3)
 
@@ -433,8 +487,10 @@ def save_averaging_behavior_data(dst_base,
     np.savez_compressed(output_file_path,
                         category=averaging_behavior.categories,
                         sub_category=averaging_behavior.sub_categories,
-                        repeat_index=averaging_behavior.repeat_indices, # 最終的に利用されていない
-                        subject=averaging_behavior.subject_ids)
+                        repeat_index=averaging_behavior.repeat_indices,
+                        subject=averaging_behavior.subject_ids,
+                        identity=averaging_behavior.identities,
+                        angle=averaging_behavior.angles)
 
 
 def preprocess_average():
@@ -458,7 +514,7 @@ def preprocess_average():
     parser.add_argument("--fmri_offset_tr", type=int,
                         default=2) # 1,2,3
     parser.add_argument("--eeg_frame_type", type=str,
-                        default="filter") # normal, filter, ft
+                        default="normal") # normal, filter, ft
     parser.add_argument("--eeg_duration_type", type=str,
                         default="normal") # "normal", "short", "long"
     parser.add_argument("--debug", type=strtobool,
@@ -482,7 +538,7 @@ def preprocess_average():
     # Fix the random seed for using in trial average
     np.random.seed(0)
 
-    for ct in [FACE_OBJECT, MALE_FEMALE, ARTIFICIAL_NATURAL]:
+    for ct in [FACE_OBJECT, MALE_FEMALE, ARTIFICIAL_NATURAL, FRONT_SIDE, SMALL_LARGE]:
         averaging_behavior = preprocess_average_behavior(
             behavior_data,
             classify_type=ct,
@@ -491,7 +547,7 @@ def preprocess_average():
             unmatched=args.unmatched)
 
         if args.classify_type != -1 and ct != args.classify_type:
-            # 明示的に処理するclassify_typeを指定している時で、対象外のclassify_typeの時はスキップ
+            # When classify type was explicitly specified, other classify types are skipped.
             continue
 
         if args.eeg:

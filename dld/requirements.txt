@@ -7,6 +7,6 @@ pandas==1.0.3
 torch==1.4.0
 torchvision==0.5.0
 tensorboardX==2.0
-h5py==3.2.1
+h5py===3.6.0
 jupyterlab==3.0.16
 tensorboard==2.6.0

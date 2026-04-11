@@ -1,7 +1,9 @@
 import unittest
 import torch
+import numpy as np
+from sklearn.metrics import classification_report
 
-from utils import get_test_subject_ids, fix_run_seed
+from utils import get_test_subject_ids, fix_run_seed, calc_metrics
 
 
 
@@ -34,6 +36,18 @@ class UtilsTest(unittest.TestCase):
         a1 = torch.rand(1)
         
         self.assertEqual(a0, a1)
+
+        
+    def test_calc_metrics(self):
+        recorded_labels = [0,     1,   0,   1,   0, 0, 1, 1]
+        recorded_preds  = [0.1, 0.2, 0.5, 0.7, 0.8, 0.1, 0.6, 0.2]
+
+        metrics = calc_metrics(recorded_labels, recorded_preds)
+        print(metrics)
+
+
+        binarised_preds = (np.array(recorded_preds) > 0.5)
+        print(classification_report(recorded_labels, binarised_preds))
         
         
     

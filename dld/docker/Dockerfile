@@ -17,6 +17,9 @@ RUN pip install torch==1.4.0
 RUN pip install torchvision==0.5.0
 RUN pip install tensorboardX==2.0
 RUN pip install h5py==3.2.1
-RUN pip install jupyterlab==3.2.1
+RUN pip install ipykernel==6.15.0
+RUN pip install traitlets==5.3.0
+RUN pip install jupyterlab==3.4.3
 RUN pip install tensorboard==2.6.0
+RUN pip install optuna==2.10.0
 RUN pip install scikit-learn==1.0.2

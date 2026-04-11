@@ -99,7 +99,7 @@ class PreprocessAverageTest(unittest.TestCase):
                                                 SUBCATEGORY_FEMALE, SUBCATEGORY_FEMALE],
                                                dtype=np.int32))
         np.testing.assert_array_equal(averaging_behavior_ct1.subject_ids,
-                                      ['TM0000', 'TM0000', 'TM0001','TM0000', 'TM0001'])        
+                                      ['TM0000', 'TM0000', 'TM0001','TM0000', 'TM0001'])
         
         # CT2
         averaging_behavior_ct2 = AveragingBehavior(classify_type=ARTIFICIAL_NATURAL,
