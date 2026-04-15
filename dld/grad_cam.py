@@ -110,7 +110,7 @@ def get_eeg_grad_cam_sub(raw_grads,
         active_features = raw_features[i][:,active_positions]
         # e.g., (63, 250), (63, 3)...
 
-        # gradientのglobal pooling
+        # Global Pooling in Gradient
         active_grads_pool = np.mean(active_grads, axis=1).reshape(63,1)
         # (63, 1)
 
