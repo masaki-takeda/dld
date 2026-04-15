@@ -54,7 +54,7 @@ def calc_binarized_metrics(binarised_probs, labels):
 
 
 def calc_metrics(all_probs, labels, classify_type):
-    # all_probs = (9, 728)など
+    # all_probs = (9, 728), etc.
 
     # mean ensemble
     mean_probs = np.mean(all_probs, axis=0)
