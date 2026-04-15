@@ -21,18 +21,18 @@ class Subject:
         self.average_trial_size = average_trial_size
         self.average_repeat_size = average_repeat_size
 
-        extended_indices0 = [] # indices0[]をシャッフルしtaverage_repeat_size回繋げたもの
-        extended_indices1 = [] # indices1[]をシャッフルしtaverage_repeat_size回繋げたもの
+        extended_indices0 = [] # The result of shuffling indices0[] and concatenating the elements taverage_repeat_size times
+        extended_indices1 = [] # The result of shuffling indices1[] and concatenating the elements taverage_repeat_size times
                 
         repeat_indices0 = []
         repeat_indices1 = []
         
         for i in range(average_repeat_size):
-            # indices0をシャッフルして繋げる
+            # Shuffle and concatenate indices0
             extended_indices0.extend(np.random.permutation(indices0))
             repeat_indices0.extend([i] * len(indices0))
 
-            # indices1をシャッフルして繋げる
+            # Shuffle and concatenate indices1
             extended_indices1.extend(np.random.permutation(indices1))
             repeat_indices1.extend([i] * len(indices1))
 
@@ -58,7 +58,7 @@ class Subject:
         self.averaging_indices0 = np.array(averaging_indices0, dtype=np.int32)
         self.averaging_indices1 = np.array(averaging_indices1, dtype=np.int32)
 
-        # 最終的にaveraging_repeat_indices0, 1は利用されていない
+        # Ultimately, `averaging_repeat_indices0, 1` is not used
         self.averaging_repeat_indices0 = np.array(averaging_repeat_indices0, dtype=np.int32)
         self.averaging_repeat_indices1 = np.array(averaging_repeat_indices1, dtype=np.int32)
         
@@ -70,10 +70,10 @@ class Subject:
         alt_extended_indices1 = []
         
         for i in range(self.average_repeat_size):
-            # indices0をシャッフルして繋げる
+            # Shuffle and concatenate indices0
             alt_extended_indices0.extend(np.random.permutation(self.indices0))
 
-            # indices1をシャッフルして繋げる
+            # Shuffle and concatenate indices1
             alt_extended_indices1.extend(np.random.permutation(self.indices1))
 
         alt_averaging_indices0 = []
@@ -288,7 +288,7 @@ def preprocess_average_behavior(behavior_data,
         alt_averaging_indices0 = None
         alt_averaging_indices1 = None
 
-    # averaging_repeat_indices0,1は最終的には使っていない
+    # averaging_repeat_indices0,1 was not used in the end
     averaging_repeat_indices0 = np.concatenate(
         [subject_obj.averaging_repeat_indices0 for subject_obj in subject_objs],
         axis=0) # (***,)

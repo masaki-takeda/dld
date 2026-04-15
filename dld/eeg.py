@@ -175,10 +175,10 @@ class EEG(object):
                                   duration_suffix)        
 
         if duration_type == "short" or duration_type == "long":
-            # shortとlongは従来の形式だったのでworkaroundを入れる.
+            # Since `short` and `long` were the traditional formats, I've added a workaround.
             all_data = io.loadmat(path)
             if frame_type == "filter":
-                # バンドパスフィルタを用いた場合
+                # When using a bandpass filter
                 eeg_data = all_data['EEGfilt']
                 # (64, 250, 50, 5)
             else:

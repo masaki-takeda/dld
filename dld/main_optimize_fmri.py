@@ -23,22 +23,22 @@ def objective_func(trial):
         'weight_decay': trial.suggest_uniform('weight_decay', 0.0, 0.1),
         #'kernel_size' : trial.suggest_int('kernel_size', 2, 9),
         #'residual'    : trial.suggest_categorical('residual', [0, 1]), 
-        # モデルタイプといった数値でないものもcategoricalにて指定可能
+        # Non-numeric values, such as model types, can also be specified using “categorical”
         #'model_type'  : trial.suggest_categorical('model_type', ['tcn1', 'tcnx']),
 
         # Fixed parameters
-	#'model_type' : 'fmri',
-	#'eeg_frame_type' : 'normal',
+	    #'model_type' : 'fmri',
+	    #'eeg_frame_type' : 'normal',
         #'eeg_normalize_type' : 'pre',
         'fmri_frame_type' : 'normal',
-	'smooth'	: False,
+	    'smooth'	: False,
         'batch_size' : 100,
-	'epochs'     : 200,
+	    'epochs'     : 200,
         'patience'   : 50,
-	'test_subjects' : 'TM_200716_01,TM_200720_01,TM_200721_01,TM_200722_01,TM_200727_01',
+	    'test_subjects' : 'TM_200716_01,TM_200720_01,TM_200721_01,TM_200722_01,TM_200727_01',
         'data_dir'   : '/data3/DLD2/Data_Converted_EEG_ICAed2',
-	'average_trial_size' : 7,
-	'average_repeat_size' : 7,
+    	'average_trial_size' : 7,
+	    'average_repeat_size' : 7,
         'fold_size'  : 1, # When only 1 Fold is targeted to speed up the processing
         'gpu'        : 1,
         #'debug'     : 1,

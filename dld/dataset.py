@@ -544,7 +544,7 @@ class BrainDataset(Dataset):
     def __len__(self):
         return len(self.indices)
 
-    # TODO: 消せる    
+    # TODO: Can be deleted    
     @property
     def fmri_ch_size(self):
         if self.fmri_frame_type == FMRI_FRAME_TYPE_NORMAL or \
@@ -570,7 +570,7 @@ class DebugDataset(Dataset):
         self.use_fmri = get_arg(kwargs, 'use_fmri', False)
         self.use_eeg = get_arg(kwargs, 'use_eeg', False)
 
-        # TODO: 消せる
+        # TODO: Can be deleted
         fmri_frame_type = get_arg(kwargs, 'fmri_frame_type', 'normal')
 
         if fmri_frame_type == 'normal':
@@ -607,7 +607,7 @@ class DebugDataset(Dataset):
     def __len__(self):
         return 256
 
-    # TODO: 消せる
+    # TODO: Can be deleted
     @property
     def fmri_ch_size(self):
         if self.fmri_frame_type == FMRI_FRAME_TYPE_NORMAL or \

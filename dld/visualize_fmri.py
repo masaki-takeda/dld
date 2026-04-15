@@ -32,7 +32,7 @@ def permutation_test(data0, data1, p_threshold=0.001, n_permutations=5000, alpha
     for i in range(1, num_clusters_original + 1):
         cluster_sizes_original[i - 1] = np.sum(labeled_array_original == i)
 
-    # 合并两组数据
+    # Merge two sets of data
     all_data = np.vstack((data0, data1))
     n_total = len(all_data)
     n_type0 = len(data0)
@@ -40,19 +40,19 @@ def permutation_test(data0, data1, p_threshold=0.001, n_permutations=5000, alpha
     max_cluster_sizes_perm = np.zeros(n_permutations)
     for i in range(n_permutations):
         if (i + 1) % 100 == 0:
-            print(f"执行置换 {i + 1}/{n_permutations}")
+            print(f"Perform permutations {i + 1}/{n_permutations}")
 
-        # 随机打乱标签
+        # Randomize tags
         perm_indices = np.random.permutation(n_total)
         perm_type0_data = all_data[perm_indices[:n_type0]]
         perm_type1_data = all_data[perm_indices[n_type0:]]
 
-        # 计算置换后的t统计量和p值
+        # Calculate the permuted t-statistic and p-value
         perm_t_values, perm_p_values = stats.ttest_ind(perm_type0_data, perm_type1_data, axis=0, equal_var=False)
         perm_t_values = np.nan_to_num(perm_t_values, nan=0.0, posinf=0.0, neginf=0.0)
         perm_p_values = np.nan_to_num(perm_p_values, nan=0.0, posinf=0.0, neginf=0.0)
 
-        # 创建显著性掩码
+        # Create a saliency mask
         perm_significant_mask =  perm_p_values < p_threshold
         labeled_array, num_clusters = connected_cluster(perm_significant_mask)
         cluster_sizes_perm = np.zeros(num_clusters)
@@ -65,9 +65,9 @@ def permutation_test(data0, data1, p_threshold=0.001, n_permutations=5000, alpha
             max_cluster_sizes_perm[i] = 0
 
     critical_cluster_size = np.percentile(max_cluster_sizes_perm, 100 * (1 - alpha))
-    # 标记显著的簇（原始数据中大于阈值的簇）
+    # Mark significant clusters (clusters in the raw data that exceed the threshold)
     significant_mask = np.zeros_like(t_vals_original, dtype=bool)
-    # 创建一个与 t_map_original 形状相同的布尔数组 significant_mask，初始化为全 False，用于存储哪些体素属于显著簇。
+    # Create a Boolean array `significant_mask` with the same shape as `t_map_original` to store which voxels belong to significant clusters.
     for i in range(1, num_clusters_original + 1):
         this_cluster = labeled_array_original == i
         if np.sum(this_cluster) >= critical_cluster_size:
@@ -82,11 +82,11 @@ def save_nifti(t_map, p_map, significant_cluster, output_dir):
 
     if t_map.shape != target_shape:
         zoom_factors = np.array(target_shape) / np.array(t_map.shape)
-        t_map = zoom(t_map, zoom_factors, order=1)  # 线性插值
-        significant_cluster = zoom(significant_cluster.astype(np.float32), zoom_factors, order=0)  # 最近邻插值
-        significant_cluster = significant_cluster.astype(np.int16)  # 转回整数型
+        t_map = zoom(t_map, zoom_factors, order=1) 
+        significant_cluster = zoom(significant_cluster.astype(np.float32), zoom_factors, order=0) 
+        significant_cluster = significant_cluster.astype(np.int16)
 
-    # 生成 masked t-map (将 t-map 与显著性簇相乘)
+    # Generate a masked t-map 
     masked_t_map = t_map * significant_cluster
 
     t_map_nifti = nib.Nifti1Image(t_map, affine)
@@ -98,11 +98,11 @@ def save_nifti(t_map, p_map, significant_cluster, output_dir):
     significant_clusters_nifti = nib.Nifti1Image(significant_cluster.astype(np.int16), affine)
     nib.save(significant_clusters_nifti, os.path.join(output_dir, f'significant_clusters.nii.gz'))
 
-    # 保存 masked t-map
+    # save masked t-map
     masked_t_map_nifti = nib.Nifti1Image(masked_t_map, affine)
     nib.save(masked_t_map_nifti, os.path.join(output_dir, f'masked_t_map.nii.gz'))
 
-    print(f"保存完成：t_map.nii.gz、p_map.nii.gz、significant_clusters.nii.gz 和 masked_t_map.nii.gz")
+    print(f"Saved successfully：t_map.nii.gz、p_map.nii.gz、significant_clusters.nii.gz and masked_t_map.nii.gz")
 
 
 if __name__ == "__main__":
