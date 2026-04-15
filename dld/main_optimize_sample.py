@@ -23,7 +23,7 @@ def objective_func(trial):
         #'weight_decay': trial.suggest_uniform('weight_decay', 0.0, 0.1),
         'kernel_size' : trial.suggest_int('kernel_size', 2, 9),
         #'residual'    : trial.suggest_categorical('residual', [0, 1]), 
-        # モデルタイプといった数値でないものもcategoricalにて指定可能
+        # Non-numeric values, such as model types, can also be specified using the “categorical” option
         #'model_type'  : trial.suggest_categorical('model_type', ['tcn1', 'tcnx']),
         
         # Fixed parameters
