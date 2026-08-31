@@ -9,7 +9,6 @@ from scipy.ndimage import zoom
 from nilearn.datasets import load_mni152_template
 
 try:
-    # Name used by the deployed visualisation workflow.
     from visualize_fmri_small_vs_large import (
         SMALL_LARGE_CLASSIFY_TYPE,
         _restore_volume,
@@ -33,11 +32,6 @@ except ModuleNotFoundError as error:
 
 
 def one_sided_greater_p_values(p_two_sided, t_values):
-    """Convert two-sided t-test p values to p values for ``mean > 0``.
-
-    Non-positive t values are assigned p=1 because they cannot support the
-    pre-specified positive alternative.
-    """
     p_two_sided = np.asarray(p_two_sided, dtype=float)
     t_values = np.asarray(t_values, dtype=float)
     p_values = np.ones_like(p_two_sided, dtype=float)
@@ -57,13 +51,6 @@ def _largest_cluster_size(mask):
 def one_sample_greater_permutation_test(data, brain_mask, p_threshold=0.001,
                                         n_permutations=5000, alpha=0.05,
                                         seed=0):
-    """Run a one-sided, cluster-corrected test of mean attribution > 0.
-
-    The first data dimension is the selected test-sample dimension.  Cluster
-    forming and max-cluster permutation statistics are both restricted to
-    positive t values, so the returned mask is directly interpretable as
-    ``greater than zero``.
-    """
     data = np.asarray(data, dtype=float)
     brain_mask = np.asarray(brain_mask, dtype=bool)
     if data.ndim != 4:
