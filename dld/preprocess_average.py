@@ -5,7 +5,9 @@ from distutils.util import strtobool
 
 from dataset import FACE_OBJECT, MALE_FEMALE, ARTIFICIAL_NATURAL
 from dataset import CATEGORY_FACE, CATEGORY_OBJECT, SUBCATEGORY_MALE, SUBCATEGORY_FEMALE, SUBCATEGORY_ARTIFICIAL, SUBCATEGORY_NATURAL
-from dataset import FRONT_SIDE, SMALL_LARGE
+from dataset import (FRONT_SIDE, SMALL_LARGE, GROUP1_GROUP2,
+                     ARTIFICIAL_SMALL_LARGE, NATURAL_SMALL_LARGE,
+                     CLASSIFY_TYPES)
 
 class Subject:
     def __init__(self,
@@ -21,18 +23,16 @@ class Subject:
         self.average_trial_size = average_trial_size
         self.average_repeat_size = average_repeat_size
 
-        extended_indices0 = [] # The result of shuffling indices0[] and concatenating the elements taverage_repeat_size times
-        extended_indices1 = [] # The result of shuffling indices1[] and concatenating the elements taverage_repeat_size times
+        extended_indices0 = [] 
+        extended_indices1 = []
                 
         repeat_indices0 = []
         repeat_indices1 = []
         
         for i in range(average_repeat_size):
-            # Shuffle and concatenate indices0
             extended_indices0.extend(np.random.permutation(indices0))
             repeat_indices0.extend([i] * len(indices0))
 
-            # Shuffle and concatenate indices1
             extended_indices1.extend(np.random.permutation(indices1))
             repeat_indices1.extend([i] * len(indices1))
 
@@ -58,7 +58,6 @@ class Subject:
         self.averaging_indices0 = np.array(averaging_indices0, dtype=np.int32)
         self.averaging_indices1 = np.array(averaging_indices1, dtype=np.int32)
 
-        # Ultimately, `averaging_repeat_indices0, 1` is not used
         self.averaging_repeat_indices0 = np.array(averaging_repeat_indices0, dtype=np.int32)
         self.averaging_repeat_indices1 = np.array(averaging_repeat_indices1, dtype=np.int32)
         
@@ -70,10 +69,8 @@ class Subject:
         alt_extended_indices1 = []
         
         for i in range(self.average_repeat_size):
-            # Shuffle and concatenate indices0
             alt_extended_indices0.extend(np.random.permutation(self.indices0))
 
-            # Shuffle and concatenate indices1
             alt_extended_indices1.extend(np.random.permutation(self.indices1))
 
         alt_averaging_indices0 = []
@@ -139,6 +136,12 @@ class AveragingBehavior:
             categories = [CATEGORY_FACE] * (len(self.indices0) + len(self.indices1))
         elif self.classify_type == SMALL_LARGE:
             categories = [CATEGORY_OBJECT] * (len(self.indices0) + len(self.indices1))
+        elif self.classify_type == GROUP1_GROUP2:
+            categories = [CATEGORY_OBJECT] * (len(self.indices0) + len(self.indices1))
+        elif self.classify_type == ARTIFICIAL_SMALL_LARGE:
+            categories = [CATEGORY_OBJECT] * (len(self.indices0) + len(self.indices1))
+        elif self.classify_type == NATURAL_SMALL_LARGE:
+            categories = [CATEGORY_OBJECT] * (len(self.indices0) + len(self.indices1))
         return np.array(categories, dtype=np.int32)
 
     @property
@@ -157,6 +160,14 @@ class AveragingBehavior:
             sub_categories = [-1] * (len(self.indices0) + len(self.indices1))
         elif self.classify_type == SMALL_LARGE:
             sub_categories = [-1] * (len(self.indices0) + len(self.indices1))
+        elif self.classify_type == GROUP1_GROUP2:
+            sub_categories = [-1] * (len(self.indices0) + len(self.indices1))
+        elif self.classify_type == ARTIFICIAL_SMALL_LARGE:
+            sub_categories = \
+                [SUBCATEGORY_ARTIFICIAL] * (len(self.indices0) + len(self.indices1))
+        elif self.classify_type == NATURAL_SMALL_LARGE:
+            sub_categories = \
+                [SUBCATEGORY_NATURAL] * (len(self.indices0) + len(self.indices1))
         return np.array(sub_categories, dtype=np.int32)
 
     @property
@@ -165,6 +176,15 @@ class AveragingBehavior:
             # allocate small=-2, large=-3 for avaraging
             identities = ([-2] * len(self.indices0)) + \
                          ([-3] * len(self.indices1))
+        elif self.classify_type == GROUP1_GROUP2:
+            identities = ([-4] * len(self.indices0)) + \
+                         ([-5] * len(self.indices1))
+        elif self.classify_type == ARTIFICIAL_SMALL_LARGE:
+            identities = ([-6] * len(self.indices0)) + \
+                         ([-7] * len(self.indices1))
+        elif self.classify_type == NATURAL_SMALL_LARGE:
+            identities = ([-8] * len(self.indices0)) + \
+                         ([-9] * len(self.indices1))
         else:
             identities = [-1] * (len(self.indices0) + len(self.indices1))
         return np.array(identities, dtype=np.int32)
@@ -255,6 +275,37 @@ def preprocess_average_behavior(behavior_data,
                                  zip((categories == CATEGORY_OBJECT),
                                      ((identities == 1) | (identities == 3)),
                                      (subjects == subject_id))])[0]
+        elif classify_type == GROUP1_GROUP2:
+            # Group1: artificial object 1 + natural object 2
+            indices0 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
+                                 zip((categories == CATEGORY_OBJECT),
+                                     ((identities == 0) | (identities == 3)),
+                                     (subjects == subject_id))])[0]
+            # Group2: artificial object 2 + natural object 1
+            indices1 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
+                                 zip((categories == CATEGORY_OBJECT),
+                                     ((identities == 1) | (identities == 2)),
+                                     (subjects == subject_id))])[0]
+        elif classify_type == ARTIFICIAL_SMALL_LARGE:
+            # Artificial object 1 (small) vs artificial object 2 (large).
+            indices0 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
+                                 zip((categories == CATEGORY_OBJECT),
+                                     (identities == 0),
+                                     (subjects == subject_id))])[0]
+            indices1 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
+                                 zip((categories == CATEGORY_OBJECT),
+                                     (identities == 1),
+                                     (subjects == subject_id))])[0]
+        elif classify_type == NATURAL_SMALL_LARGE:
+            # Natural object 1 (small) vs natural object 2 (large).
+            indices0 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
+                                 zip((categories == CATEGORY_OBJECT),
+                                     (identities == 2),
+                                     (subjects == subject_id))])[0]
+            indices1 = np.where([w0 and w1 and w2 for w0, w1, w2 in \
+                                 zip((categories == CATEGORY_OBJECT),
+                                     (identities == 3),
+                                     (subjects == subject_id))])[0]
         else:
             assert False
             
@@ -288,7 +339,6 @@ def preprocess_average_behavior(behavior_data,
         alt_averaging_indices0 = None
         alt_averaging_indices1 = None
 
-    # averaging_repeat_indices0,1 was not used in the end
     averaging_repeat_indices0 = np.concatenate(
         [subject_obj.averaging_repeat_indices0 for subject_obj in subject_objs],
         axis=0) # (***,)
@@ -538,17 +588,21 @@ def preprocess_average():
     # Fix the random seed for using in trial average
     np.random.seed(0)
 
-    for ct in [FACE_OBJECT, MALE_FEMALE, ARTIFICIAL_NATURAL, FRONT_SIDE, SMALL_LARGE]:
+    if args.classify_type != -1 and args.classify_type not in CLASSIFY_TYPES:
+        parser.error("--classify_type must be -1 or one of: {}".format(
+            ', '.join(str(ct) for ct in CLASSIFY_TYPES)))
+
+    for ct in CLASSIFY_TYPES:
+        if args.classify_type != -1 and ct != args.classify_type:
+            # When classify type was explicitly specified, other classify types are skipped.
+            continue
+
         averaging_behavior = preprocess_average_behavior(
             behavior_data,
             classify_type=ct,
             average_trial_size=args.average_trial_size,
             average_repeat_size=args.average_repeat_size,
             unmatched=args.unmatched)
-
-        if args.classify_type != -1 and ct != args.classify_type:
-            # When classify type was explicitly specified, other classify types are skipped.
-            continue
 
         if args.eeg:
             preprocess_average_eeg(dst_base,
