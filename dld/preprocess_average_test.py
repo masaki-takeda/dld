@@ -1,8 +1,8 @@
 import numpy as np
 import unittest
 
-from preprocess_average import Subject, AveragingBehavior
-from dataset import FACE_OBJECT, MALE_FEMALE, ARTIFICIAL_NATURAL
+from preprocess_average import Subject, AveragingBehavior, preprocess_average_behavior
+from dataset import FACE_OBJECT, MALE_FEMALE, ARTIFICIAL_NATURAL, GROUP1_GROUP2
 from dataset import CATEGORY_FACE, CATEGORY_OBJECT, SUBCATEGORY_MALE, SUBCATEGORY_FEMALE, SUBCATEGORY_ARTIFICIAL, SUBCATEGORY_NATURAL
 
 
@@ -128,6 +128,80 @@ class PreprocessAverageTest(unittest.TestCase):
                                                dtype=np.int32))
         np.testing.assert_array_equal(averaging_behavior_ct2.subject_ids,
                                       ['TM0000', 'TM0000', 'TM0001','TM0000', 'TM0001'])
+
+        # CT5
+        averaging_behavior_ct5 = AveragingBehavior(classify_type=GROUP1_GROUP2,
+                                                   indices0=indices0,
+                                                   indices1=indices1,
+                                                   alt_indices0=None,
+                                                   alt_indices1=None,
+                                                   repeat_indices0=repeat_indices0,
+                                                   repeat_indices1=repeat_indices1,
+                                                   subject_ids0=subject_ids0,
+                                                   subject_ids1=subject_ids1)
+
+        self.assertEqual(averaging_behavior_ct5.indices.shape, (5, 3))
+        self.assertEqual(averaging_behavior_ct5.repeat_indices.shape, (5,))
+
+        np.testing.assert_array_equal(averaging_behavior_ct5.categories,
+                                      np.array([CATEGORY_OBJECT, CATEGORY_OBJECT, CATEGORY_OBJECT,
+                                                CATEGORY_OBJECT, CATEGORY_OBJECT],
+                                               dtype=np.int32))
+        np.testing.assert_array_equal(averaging_behavior_ct5.sub_categories,
+                                      np.array([-1, -1, -1, -1, -1],
+                                               dtype=np.int32))
+        np.testing.assert_array_equal(averaging_behavior_ct5.identities,
+                                      np.array([-4, -4, -4, -5, -5],
+                                               dtype=np.int32))
+        np.testing.assert_array_equal(averaging_behavior_ct5.subject_ids,
+                                      ['TM0000', 'TM0000', 'TM0001','TM0000', 'TM0001'])
+
+    def test_preprocess_average_behavior_group1_group2(self):
+        np.random.seed(0)
+        behavior_data = {
+            "category": np.array([
+                CATEGORY_OBJECT,
+                CATEGORY_OBJECT,
+                CATEGORY_OBJECT,
+                CATEGORY_OBJECT,
+                CATEGORY_FACE,
+                CATEGORY_OBJECT,
+                CATEGORY_OBJECT,
+                CATEGORY_OBJECT,
+                CATEGORY_OBJECT,
+            ], dtype=np.int32),
+            "sub_category": np.ones(9, dtype=np.int32) * -1,
+            "subject": np.array([
+                "TM0000",
+                "TM0000",
+                "TM0000",
+                "TM0000",
+                "TM0000",
+                "TM0001",
+                "TM0001",
+                "TM0001",
+                "TM0001",
+            ]),
+            "identity": np.array([0, 1, 2, 3, 0, 0, 1, 2, 3], dtype=np.int32),
+            "angle": np.ones(9, dtype=np.int32) * -1,
+        }
+
+        averaging_behavior = preprocess_average_behavior(
+            behavior_data,
+            classify_type=GROUP1_GROUP2,
+            average_trial_size=1,
+            average_repeat_size=1,
+            unmatched=False)
+
+        np.testing.assert_array_equal(np.sort(averaging_behavior.indices0.reshape(-1)),
+                                      np.array([0, 3, 5, 8]))
+        np.testing.assert_array_equal(np.sort(averaging_behavior.indices1.reshape(-1)),
+                                      np.array([1, 2, 6, 7]))
+        np.testing.assert_array_equal(averaging_behavior.categories,
+                                      np.array([CATEGORY_OBJECT] * 8, dtype=np.int32))
+        np.testing.assert_array_equal(averaging_behavior.identities,
+                                      np.array([-4, -4, -4, -4, -5, -5, -5, -5],
+                                               dtype=np.int32))
         
         
 if __name__ == '__main__':
