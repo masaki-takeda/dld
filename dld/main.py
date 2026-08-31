@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 
-from dataset import get_dataset, FACE_OBJECT, MALE_FEMALE, ARTIFICIAL_NATURAL, FRONT_SIDE, SMALL_LARGE, CLASSIFY_ALL
+from dataset import get_dataset, CLASSIFY_TYPES, CLASSIFY_ALL
 from dataset import DATA_TYPE_TRAIN, DATA_TYPE_VALIDATION, DATA_TYPE_TEST
 from dataset import COMBINE_TYPE_EEG, COMBINE_TYPE_FMRI, COMBINE_TYPE_COMBINED
 from model import get_eeg_model, get_fmri_model, get_combined_model
@@ -45,7 +45,7 @@ def load_pretrained_models(model,
 
     # Remove "module." from the key name in state_dict when training with data_parallel
     fmri_state = fix_state_dict(fmri_state)
-    eeg_state = fix_state_dict(fmri_state)
+    eeg_state = fix_state_dict(eeg_state)
     
     merge_state_dict(fmri_state, combined_state)
     merge_state_dict(eeg_state,  combined_state)
@@ -56,7 +56,7 @@ def load_pretrained_models(model,
         model.fix_preloads()
 
 
-def get_model(combine_type, args, fold, device):
+def get_model(combine_type, args, fold, device, classify_type=None):
     if combine_type == COMBINE_TYPE_EEG:
         model = get_eeg_model(args.model_type,
                               args.parallel,
@@ -91,9 +91,11 @@ def get_model(combine_type, args, fold, device):
                 # Loading of pretrained model
                 if args.preload_fmri_dir is not None or args.preload_eeg_dir is not None:
                     # If either preload_fmri_dir or preload_eeg_dir is None, prelaod will not be done
+                    if classify_type is None:
+                        classify_type = args.classify_type
                     load_pretrained_models(model,
                                            device,
-                                           args.classify_type,
+                                           classify_type,
                                            fold,
                                            args.fix_preloads,
                                            args.preload_fmri_dir,
@@ -310,7 +312,7 @@ def train_fold(combine_type, args, classify_type, fold):
         # Fix random seeds at runtime
         fix_run_seed(args.run_seed + fold)
         
-    model = get_model(combine_type, args, fold, device)
+    model = get_model(combine_type, args, fold, device, classify_type=classify_type)
     
     optimizer = get_optimizer(combine_type, args, model)
     
@@ -433,7 +435,7 @@ def test_fold(combine_type, args, classify_type, fold):
         # Fix random seeds at runtime
         fix_run_seed(args.run_seed + fold)
     
-    model = get_model(combine_type, args, fold, device)
+    model = get_model(combine_type, args, fold, device, classify_type=classify_type)
     
     model_path  = "{}/model_ct{}_{}.pt".format(args.save_dir, classify_type, fold)
     state = torch.load(model_path, device)
@@ -472,7 +474,7 @@ def test_pfi_fold(combine_type, args, classify_type, fold):
         # Fix random seeds at runtime
         fix_run_seed(args.run_seed + fold)
     
-    model = get_model(combine_type, args, fold, device)
+    model = get_model(combine_type, args, fold, device, classify_type=classify_type)
     
     model_path  = "{}/model_ct{}_{}.pt".format(args.save_dir, classify_type, fold)
     state = torch.load(model_path, device)
@@ -592,32 +594,23 @@ def main():
         
         # Train
         if args.classify_type == CLASSIFY_ALL:
-            train_full_folds(combine_type, args, classify_type=FACE_OBJECT)
-            train_full_folds(combine_type, args, classify_type=MALE_FEMALE)
-            train_full_folds(combine_type, args, classify_type=ARTIFICIAL_NATURAL)
-            train_full_folds(combine_type, args, classify_type=FRONT_SIDE)
-            train_full_folds(combine_type, args, classify_type=SMALL_LARGE)
+            for classify_type in CLASSIFY_TYPES:
+                train_full_folds(combine_type, args, classify_type=classify_type)
         else:
             train_full_folds(combine_type, args, classify_type=args.classify_type)
     else:
         if args.pfi_shuffle_size == 0:
             # Test
             if args.classify_type == CLASSIFY_ALL:
-                test_full_folds(combine_type, args, classify_type=FACE_OBJECT)
-                test_full_folds(combine_type, args, classify_type=MALE_FEMALE)
-                test_full_folds(combine_type, args, classify_type=ARTIFICIAL_NATURAL)
-                test_full_folds(combine_type, args, classify_type=FRONT_SIDE)
-                test_full_folds(combine_type, args, classify_type=SMALL_LARGE)
+                for classify_type in CLASSIFY_TYPES:
+                    test_full_folds(combine_type, args, classify_type=classify_type)
             else:
                 test_full_folds(combine_type, args, classify_type=args.classify_type)
         else:
             # PFI calculation
             if args.classify_type == CLASSIFY_ALL:
-                test_pfi(combine_type, args, classify_type=FACE_OBJECT)
-                test_pfi(combine_type, args, classify_type=MALE_FEMALE)
-                test_pfi(combine_type, args, classify_type=ARTIFICIAL_NATURAL)
-                test_pfi(combine_type, args, classify_type=FRONT_SIDE)
-                test_pfi(combine_type, args, classify_type=SMALL_LARGE)
+                for classify_type in CLASSIFY_TYPES:
+                    test_pfi(combine_type, args, classify_type=classify_type)
             else:
                 test_pfi(combine_type, args, classify_type=args.classify_type)
 

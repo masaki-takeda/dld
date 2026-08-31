@@ -17,11 +17,24 @@ FACE_OBJECT        = 0
 MALE_FEMALE        = 1
 ARTIFICIAL_NATURAL = 2
 FRONT_SIDE         = 3 # front face vs non-front face
-SMALL_LARGE        = 4 # front face/right face/left face
-#FRONT_RIGHT_LEFT   = 5 # front face/right face/left face
+SMALL_LARGE        = 4 # artificial1/natural1 vs artificial2/natural2 objects
+GROUP1_GROUP2      = 5 # artificial1/natural2 vs artificial2/natural1 objects
+ARTIFICIAL_SMALL_LARGE = 6 # artificial object1 (small) vs object2 (large)
+NATURAL_SMALL_LARGE    = 7 # natural object1 (small) vs object2 (large)
 CLASSIFY_ALL       = -1
 
-CLASSIFY_TYPE_MAX  = 5
+CLASSIFY_TYPES = [
+    FACE_OBJECT,
+    MALE_FEMALE,
+    ARTIFICIAL_NATURAL,
+    FRONT_SIDE,
+    SMALL_LARGE,
+    GROUP1_GROUP2,
+    ARTIFICIAL_SMALL_LARGE,
+    NATURAL_SMALL_LARGE,
+]
+
+CLASSIFY_TYPE_MAX  = 8
 
 CATEGORY_FACE          = 0
 CATEGORY_OBJECT        = 1
@@ -45,6 +58,57 @@ EEG_DURATION_TYPE_LONG   = 2
 COMBINE_TYPE_EEG      = 1
 COMBINE_TYPE_FMRI     = 2
 COMBINE_TYPE_COMBINED = 3
+
+
+def derive_label_shuffle_seed(base_seed, fold, data_type):
+    """Return a deterministic, distinct seed for one fold/data split."""
+    base_seed = int(base_seed)
+    fold = int(fold)
+    data_type = int(data_type)
+    if base_seed < 0:
+        raise ValueError('label_shuffle_seed must be non-negative.')
+    if fold < 0:
+        raise ValueError('fold must be non-negative for label shuffling.')
+    if data_type not in (DATA_TYPE_TRAIN, DATA_TYPE_VALIDATION):
+        raise ValueError(
+            'Labels may only be shuffled for training or validation data.')
+    # RandomState accepts seeds from 0 through 2**32 - 1.  Large coprime
+    # offsets make train/validation and fold permutations independent while
+    # preserving reproducibility on the legacy NumPy version used here.
+    return (base_seed + fold * 1009 + data_type * 1000003) % (2 ** 32)
+
+
+def shuffle_labels_within_subject(labels, indices, subjects, seed):
+    """Permute selected labels independently within each participant.
+
+    A copy is returned.  Sample membership, sample order, labels outside the
+    selected indices, and the class counts of every participant are retained.
+    """
+    labels = np.asarray(labels)
+    subjects = np.asarray(subjects)
+    indices = np.asarray(indices, dtype=np.int64).reshape(-1)
+    if labels.ndim != 1 or subjects.ndim != 1:
+        raise ValueError('labels and subjects must both be one-dimensional.')
+    if len(labels) != len(subjects):
+        raise ValueError('labels and subjects must have the same length.')
+    if indices.size == 0:
+        raise ValueError('Cannot shuffle labels for an empty data split.')
+    if np.any(indices < 0) or np.any(indices >= len(labels)):
+        raise ValueError('Label-shuffle indices are outside the data range.')
+    if len(np.unique(indices)) != len(indices):
+        raise ValueError('Label-shuffle indices must be unique.')
+    selected_labels = labels[indices]
+    if not np.all(np.isin(selected_labels, [0, 1])):
+        raise ValueError('Selected labels must contain only binary values 0/1.')
+
+    shuffled = labels.copy()
+    rng = np.random.RandomState(int(seed))
+    selected_subjects = subjects[indices]
+    for subject in np.unique(selected_subjects):
+        subject_indices = indices[selected_subjects == subject]
+        permutation = rng.permutation(len(subject_indices))
+        shuffled[subject_indices] = labels[subject_indices][permutation]
+    return shuffled
 
 
 # Channel numbers for the mask
@@ -135,6 +199,8 @@ class BrainDataset(Dataset):
                  unmatched=False,
                  fmri_mask_name=None,
                  pfi_seed=None,
+                 label_shuffle=False,
+                 label_shuffle_seed=0,
                  debug=False):
         """
         use_fmri:
@@ -388,6 +454,28 @@ class BrainDataset(Dataset):
         labels = np.ones([len(categories)], dtype=np.int32) * -1
         labels[indices0] = 0
         labels[indices1] = 1
+
+        if label_shuffle and classify_type != SMALL_LARGE:
+            raise ValueError(
+                'The label-shuffled negative control is currently restricted '
+                'to classify_type=4 (Small/Large).')
+
+        if label_shuffle and data_type != DATA_TYPE_TEST:
+            split_seed = derive_label_shuffle_seed(
+                label_shuffle_seed, fold, data_type)
+            original_selected_labels = labels[np.hstack([indices0, indices1])]
+            labels = shuffle_labels_within_subject(
+                labels, np.hstack([indices0, indices1]), subjects, split_seed)
+            changed_count = int(np.sum(
+                labels[np.hstack([indices0, indices1])] !=
+                original_selected_labels))
+            print('Label-shuffled negative control: fold={}, data_type={}, '
+                  'seed={}, changed={}/{} labels.'.format(
+                      fold, data_type, split_seed, changed_count,
+                      len(original_selected_labels)))
+        elif label_shuffle and data_type == DATA_TYPE_TEST:
+            print('Label shuffling is disabled for test data; true labels '
+                  'are retained.')
         
         self.labels = labels
         
@@ -484,6 +572,39 @@ class BrainDataset(Dataset):
                       zip((categories == CATEGORY_OBJECT),
                           (identities == 1) | (identities == 3) | (identities == -3),
                           (trial_mask == True))]
+        elif classify_type == GROUP1_GROUP2:
+            # Group1: artificial object 1 + natural object 2
+            flags0 = [w0 and w1 and w2 for w0, w1, w2 in \
+                      zip((categories == CATEGORY_OBJECT),
+                          (identities == 0) | (identities == 3) | (identities == -4),
+                          (trial_mask == True))]
+            # Group2: artificial object 2 + natural object 1
+            flags1 = [w0 and w1 and w2 for w0, w1, w2 in \
+                      zip((categories == CATEGORY_OBJECT),
+                          (identities == 1) | (identities == 2) | (identities == -5),
+                          (trial_mask == True))]
+        elif classify_type == ARTIFICIAL_SMALL_LARGE:
+            # Artificial object 1 (small) vs artificial object 2 (large).
+            # -6/-7 are the identities written by trial averaging.
+            flags0 = [w0 and w1 and w2 for w0, w1, w2 in \
+                      zip((categories == CATEGORY_OBJECT),
+                          (identities == 0) | (identities == -6),
+                          (trial_mask == True))]
+            flags1 = [w0 and w1 and w2 for w0, w1, w2 in \
+                      zip((categories == CATEGORY_OBJECT),
+                          (identities == 1) | (identities == -7),
+                          (trial_mask == True))]
+        elif classify_type == NATURAL_SMALL_LARGE:
+            # Natural object 1 (small) vs natural object 2 (large).
+            # -8/-9 are the identities written by trial averaging.
+            flags0 = [w0 and w1 and w2 for w0, w1, w2 in \
+                      zip((categories == CATEGORY_OBJECT),
+                          (identities == 2) | (identities == -8),
+                          (trial_mask == True))]
+            flags1 = [w0 and w1 and w2 for w0, w1, w2 in \
+                      zip((categories == CATEGORY_OBJECT),
+                          (identities == 3) | (identities == -9),
+                          (trial_mask == True))]
         else:
             assert False
             
@@ -544,7 +665,6 @@ class BrainDataset(Dataset):
     def __len__(self):
         return len(self.indices)
 
-    # TODO: Can be deleted    
     @property
     def fmri_ch_size(self):
         if self.fmri_frame_type == FMRI_FRAME_TYPE_NORMAL or \
@@ -570,7 +690,7 @@ class DebugDataset(Dataset):
         self.use_fmri = get_arg(kwargs, 'use_fmri', False)
         self.use_eeg = get_arg(kwargs, 'use_eeg', False)
 
-        # TODO: Can be deleted
+        # TODO: 消せる
         fmri_frame_type = get_arg(kwargs, 'fmri_frame_type', 'normal')
 
         if fmri_frame_type == 'normal':
@@ -607,7 +727,6 @@ class DebugDataset(Dataset):
     def __len__(self):
         return 256
 
-    # TODO: Can be deleted
     @property
     def fmri_ch_size(self):
         if self.fmri_frame_type == FMRI_FRAME_TYPE_NORMAL or \
@@ -657,4 +776,7 @@ def get_dataset(combine_type,
                            unmatched=args.unmatched,
                            fmri_mask_name=fmri_mask_name,
                            pfi_seed=pfi_seed,
+                           label_shuffle=getattr(args, 'label_shuffle', False),
+                           label_shuffle_seed=getattr(
+                               args, 'label_shuffle_seed', 0),
                            debug=args.debug)

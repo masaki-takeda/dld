@@ -17,7 +17,9 @@ def get_common_parser():
     parser.add_argument("--save_dir", type=str,
                         default="saved")
     # Classify types
-    # FACE_PLACE=0, MALE_FEMALE=1, ARTIFICAL_NATURL=2, FRONT_SIDE=3, SMALL_LARGE=4, ALL=-1    
+    # FACE_OBJECT=0, MALE_FEMALE=1, ARTIFICIAL_NATURAL=2,
+    # FRONT_SIDE=3, SMALL_LARGE=4, GROUP1_GROUP2=5,
+    # ARTIFICIAL_SMALL_LARGE=6, NATURAL_SMALL_LARGE=7, ALL=-1
     parser.add_argument("--classify_type", type=int,
                         default=-1)
     parser.add_argument("--desc", type=str,
@@ -75,6 +77,12 @@ def get_common_parser():
     parser.add_argument("--fmri_mask", type=str,
                         default=None)
     parser.add_argument("--pfi_shuffle_size", type=int,
+                        default=0)
+    # Negative-control training.  This is deliberately disabled by default so
+    # existing experiments retain their original labels and behavior.
+    parser.add_argument("--label_shuffle", type=strtobool,
+                        default="false")
+    parser.add_argument("--label_shuffle_seed", type=int,
                         default=0)
     parser.add_argument("--debug", type=strtobool,
                         default="false")
